@@ -612,7 +612,7 @@ if [ "$CLI_ADAPTER_LOADED" = true ]; then
                 _claude_model=$(get_agent_model "$_agent")
                 if [[ -n "$_claude_model" ]]; then
                     # haiku→Haiku, opus→Opus, sonnet→Sonnet に正規化
-                    MODEL_NAMES[$i]=$(echo "$_claude_model" | sed 's/^./\U&/')
+                    MODEL_NAMES[$i]=$(echo "$_claude_model" | awk '{print toupper(substr($0,1,1)) substr($0,2)}')
                 fi
                 ;;
             codex)
