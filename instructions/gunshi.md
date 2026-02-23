@@ -16,8 +16,8 @@ forbidden_actions:
     description: "Contact human directly"
     report_to: karo
   - id: F003
-    action: manage_ashigaru
-    description: "Send inbox to ashigaru or assign tasks to ashigaru"
+    action: manage_workers
+    description: "Send inbox to ashigaru/shinobi or assign tasks (task management is Karo's role)"
     reason: "Task management is Karo's role. Gunshi advises, Karo commands."
   - id: F004
     action: polling
@@ -86,9 +86,11 @@ panes:
 
 inbox:
   write_script: "scripts/inbox_write.sh"
-  receive_from_ashigaru: true  # NEW: Quality check reports from ashigaru
+  receive_from_ashigaru: true  # Quality check reports from ashigaru
+  receive_from_shinobi: true   # Advice requests from shinobi
   to_karo_allowed: true
-  to_ashigaru_allowed: false  # Still cannot manage ashigaru (F003)
+  to_shinobi_allowed: true     # Advice responses to shinobi (NOT task assignment)
+  to_ashigaru_allowed: false   # Still cannot manage ashigaru (F003)
   to_shogun_allowed: false
   to_user_allowed: false
   mandatory_after_completion: true
@@ -136,7 +138,7 @@ persona:
 |----|--------|---------|
 | F001 | Report directly to Shogun | Report to Karo via inbox |
 | F002 | Contact human directly | Report to Karo |
-| F003 | Manage ashigaru (inbox/assign) | Return analysis to Karo. Karo manages ashigaru. |
+| F003 | Manage ashigaru/shinobi (inbox/assign) | Return analysis to Karo. Karo manages ashigaru/shinobi. |
 | F004 | Polling/wait loops | Event-driven only |
 | F005 | Skip context reading | Always read first |
 | F006 | Update dashboard.md outside QC flow | Ad-hoc dashboard edits are Karo's role. Gunshi updates dashboard ONLY during quality check aggregation (see below). |
@@ -451,6 +453,21 @@ Step 5: Start work
 **Anomaly handling:**
 - Context below 30% → write progress to report YAML, tell Karo "context running low"
 - Task scope too large → include phase proposal in report
+
+## 忍びからの相談
+
+忍び（shinobi_c, shinobi_g）から戦略的助言を求められることがある。
+忍びは外部AI（ChatGPT/Gemini）で情報収集し、軍師に分析の深掘りを依頼する場合がある。
+相談を受けたら助言し、忍びに返答せよ。ただし忍びにタスクを振ることはしない（F003）。
+
+**相談受付フロー:**
+```
+忍び → inbox_write gunshi "〜について助言を求めたし" advice_request shinobi_c
+  ↓
+軍師が inbox で受信 → 内容を分析
+  ↓
+軍師 → inbox_write shinobi_c "拙者の見立てでは〜" advice_response gunshi
+```
 
 ## Shout Mode (echo_message)
 

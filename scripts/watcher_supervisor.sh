@@ -48,8 +48,8 @@ while true; do
     start_watcher_if_missing "ashigaru3" "multiagent:agents.3" "logs/inbox_watcher_ashigaru3.log"
     start_watcher_if_missing "ashigaru4" "multiagent:agents.4" "logs/inbox_watcher_ashigaru4.log"
     start_watcher_if_missing "ashigaru5" "multiagent:agents.5" "logs/inbox_watcher_ashigaru5.log"
-    start_watcher_if_missing "ashigaru6" "multiagent:agents.6" "logs/inbox_watcher_ashigaru6.log"
-    start_watcher_if_missing "ashigaru7" "multiagent:agents.7" "logs/inbox_watcher_ashigaru7.log"
+    start_watcher_if_missing "shinobi_c" "multiagent:agents.6" "logs/inbox_watcher_shinobi_c.log"
+    start_watcher_if_missing "shinobi_g" "multiagent:agents.7" "logs/inbox_watcher_shinobi_g.log"
     start_watcher_if_missing "gunshi" "multiagent:agents.8" "logs/inbox_watcher_gunshi.log"
     sleep 5
 done

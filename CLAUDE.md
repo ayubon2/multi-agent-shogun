@@ -4,17 +4,19 @@ version: "3.0"
 updated: "2026-02-07"
 description: "Claude Code + tmux multi-agent parallel dev platform with sengoku military hierarchy"
 
-hierarchy: "Lord (human) → Shogun → Karo → Ashigaru 1-7 / Gunshi"
+hierarchy: "Lord (human) → Shogun → Karo → Ashigaru 1-5 / Shinobi c,g / Gunshi"
 communication: "YAML files + inbox mailbox system (event-driven, NO polling)"
 
 tmux_sessions:
   shogun: { pane_0: shogun }
-  multiagent: { pane_0: karo, pane_1-7: ashigaru1-7, pane_8: gunshi }
+  multiagent: { pane_0: karo, pane_1-5: ashigaru1-5, pane_6: shinobi_c, pane_7: shinobi_g, pane_8: gunshi }
 
 files:
   config: config/projects.yaml          # Project list (summary)
   projects: "projects/<id>.yaml"        # Project details (git-ignored, contains secrets)
+  campaigns: campaigns.md               # Campaign record (permanent, alongside dashboard.md)
   context: "context/{project}.md"       # Project-specific notes for ashigaru/gunshi
+  context_campaign: "context/sakusen_NNN.md" # Campaign-specific context for ashigaru
   cmd_queue: queue/shogun_to_karo.yaml  # Shogun → Karo commands
   tasks: "queue/tasks/ashigaru{N}.yaml" # Karo → Ashigaru assignments (per-ashigaru)
   gunshi_task: queue/tasks/gunshi.yaml  # Karo → Gunshi strategic assignments
@@ -63,7 +65,7 @@ language:
 
 1. Identify self: `tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}'`
 2. `mcp__memory__read_graph` — restore rules, preferences, lessons **(shogun/karo/gunshi only. ashigaru skip this step — task YAML is sufficient)**
-3. **Read your instructions file**: shogun→`instructions/shogun.md`, karo→`instructions/karo.md`, ashigaru→`instructions/ashigaru.md`, gunshi→`instructions/gunshi.md`. **NEVER SKIP** — even if a conversation summary exists. Summaries do NOT preserve persona, speech style, or forbidden actions.
+3. **Read your instructions file**: shogun→`instructions/shogun.md`, karo→`instructions/karo.md`, ashigaru→`instructions/ashigaru.md`, shinobi→`instructions/shinobi.md`, gunshi→`instructions/gunshi.md`. **NEVER SKIP** — even if a conversation summary exists. Summaries do NOT preserve persona, speech style, or forbidden actions.
 4. Rebuild state from primary YAML data (queue/, tasks/, reports/)
 5. Review forbidden actions, then start work
 
@@ -196,6 +198,21 @@ Layer 4: Session context — volatile (CLAUDE.md auto-loaded, instructions/*.md,
 # Project Management
 
 System manages ALL white-collar work, not just self-improvement. Project folders can be external (outside this repo). `projects/` is git-ignored (contains secrets).
+
+# Campaign Management (作戦管理)
+
+## 命名規則
+**形式**: `作戦NNN_和名`（NNN = 001から連番、全プロジェクト共通通し番号）
+
+## ファイル構成
+- `projects/campaigns.md` — 全作戦の一覧・ステータス（家老が更新、将軍・殿が確認）
+- `context/sakusen_NNN.md` — 作戦別の詳細コンテキスト（足軽への作業指示・背景情報）
+
+## 運用ルール
+- 家老がcampaigns.mdのステータスを更新
+- タスクYAMLの `project:` フィールドに `sakusen_NNN` を記載 → 足軽が対応contextを読む
+- 作戦間の依存はcampaigns.mdの依存関係グラフで管理
+- 次の作戦番号: campaigns.md の「次の作戦番号」を参照
 
 # Shogun Mandatory Rules
 

@@ -164,6 +164,23 @@ Lord: command → Shogun: write YAML → inbox_write → END TURN
                               dashboard.md updated as report
 ```
 
+## Autonomous Forward Drive (自律前進の原則)
+
+**将軍が止まる＝全軍が止まる。** 以下を将軍の裁量で実行し、殿の確認を待たない。
+
+1. **即時発令**: cmd完了を検知したら、即座に次のcmdを発令する。足軽を空かせない。
+2. **完了判定**: acceptance_criteria達成を確認したらstatusをdoneに更新。壁に当たった作戦は目標を下方修正して完了扱いにし、残課題を別作戦として切り出す。
+3. **🚨要対応の判断**: 技術的判断（目標修正、代替案選択、段階的リリース）は将軍が即決。殿への確認が必要なのは予算・方針転換・外部サービス契約など。
+4. **将来課題の保存**: `~/projects/TODO.md` にプロジェクト別で蓄積。Memory MCPには入れない。
+5. **ダッシュボード監視**: 定期的にdashboard.mdを読み、進捗を把握して次の手を打つ。
+6. **仕様書の作成**: 作戦完了後、実装内容を docs/SPEC.md として各プロジェクトに残す。「何を作ったか」「今何ができるか」を記録し、次のセッションで迷わないようにする。
+
+```
+cmd_N done → read dashboard → write cmd_N+1 → inbox_write karo → repeat
+           → update TODO.md (残課題)
+           → cmd for SPEC.md (仕様記録)
+```
+
 ## ntfy Input Handling
 
 ntfy_listener.sh runs in background, receiving messages from Lord's smartphone.
@@ -361,3 +378,4 @@ Save when:
 
 Save: Lord's preferences, key decisions + reasons, cross-project insights, solved problems.
 Don't save: temporary task details (use YAML), file contents (just read them), in-progress details (use dashboard.md).
+**残課題・将来改善はMemoryに入れるな** → `~/projects/TODO.md` にプロジェクト別で蓄積。

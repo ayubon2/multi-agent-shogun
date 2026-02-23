@@ -9,6 +9,9 @@
 # Step 2: ディレクトリの探索を許可（中身は個別に許可）
 !*/
 
+# Step 2.5: venv は完全除外（LICENSE等のwhitelistにマッチするファイルが含まれるため）
+.venv/
+
 # Step 3: OSS公開対象ファイルを許可
 !.gitignore
 !.gitattributes
@@ -30,6 +33,7 @@
 !instructions/karo.md
 !instructions/ashigaru.md
 !instructions/gunshi.md
+!instructions/shinobi.md
 
 # Multi-CLI: CLI-specific tool descriptions
 !instructions/cli_specific/
@@ -69,6 +73,7 @@
 
 # Config (sample files only, no secrets)
 !config/
+!config/settings.yaml
 !config/ntfy_auth.env.sample
 
 # Templates
