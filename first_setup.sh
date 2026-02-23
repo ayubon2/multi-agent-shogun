@@ -722,8 +722,12 @@ RESULTS+=("実行権限: OK")
 # ============================================================
 log_step "STEP 10: alias設定"
 
-# alias追加対象ファイル
-BASHRC_FILE="$HOME/.bashrc"
+# alias追加対象ファイル（macOS=zsh, Linux=bash）
+if [ "$UNAME_S" = "Darwin" ]; then
+    BASHRC_FILE="$HOME/.zshrc"
+else
+    BASHRC_FILE="$HOME/.bashrc"
+fi
 
 # css/csm を関数として定義（destroy-unattached で自動掃除）
 # - 複数端末から接続しても画面サイズが干渉しない
@@ -773,16 +777,68 @@ if [ -f "$BASHRC_FILE" ]; then
         log_info "csm 関数を更新しました"
         ALIAS_ADDED=true
     fi
+
+    # shogun 関数（ワンコマンドランチャー: 起動+レイアウト+アタッチ / stop / status）
+    # csst alias は shogun 関数で代替されるため削除
+    if grep -q "alias csst=" "$BASHRC_FILE" 2>/dev/null; then
+        sed -i '/alias csst=/d' "$BASHRC_FILE"
+        log_info "旧 alias csst を削除しました（shogun 関数で代替）"
+    fi
+
+    # shogun 関数を追加/更新
+    if grep -q "^shogun()" "$BASHRC_FILE" 2>/dev/null; then
+        # 既存の shogun 関数を削除（複数行関数なので } まで削除）
+        sed -i '/^shogun()/,/^}/d' "$BASHRC_FILE"
+        log_info "既存の shogun 関数を削除しました"
+    fi
+
+    SHOGUN_DIR="$SCRIPT_DIR"
+    cat >> "$BASHRC_FILE" << 'SHOGUN_FUNC_EOF'
+shogun() {
+  local SHOGUN_DIR=~/projects/010_multi-agent-shogun
+  case "${1:-}" in
+    stop)
+      echo "🏯 全軍撤収中..."
+      pkill -f inbox_watcher.sh 2>/dev/null || true
+      pkill -f 'fswatch.*queue/inbox' 2>/dev/null || true
+      tmux kill-session -t multiagent 2>/dev/null || true
+      tmux kill-session -t shogun 2>/dev/null || true
+      echo "🏯 撤収完了"
+      ;;
+    status)
+      echo "=== tmux セッション ==="
+      tmux list-sessions 2>/dev/null || echo "(セッションなし)"
+      echo ""
+      if [[ -f "$SHOGUN_DIR/dashboard.md" ]]; then
+        echo "=== ダッシュボード ==="
+        cat "$SHOGUN_DIR/dashboard.md"
+      fi
+      ;;
+    -h|--help|-s|--setup-only)
+      cd "$SHOGUN_DIR" && ./shutsujin_departure.sh "$@"
+      ;;
+    *)
+      cd "$SHOGUN_DIR" && ./shutsujin_departure.sh "$@"
+      bash "$SHOGUN_DIR/shogun_layout.sh"
+      if [[ -n "${TMUX:-}" ]]; then
+        tmux switch-client -t multiagent
+      else
+        csm
+      fi
+      ;;
+  esac
+}
+SHOGUN_FUNC_EOF
+    log_info "shogun 関数を追加しました（ワンコマンドランチャー）"
+    ALIAS_ADDED=true
 else
     log_warn "$BASHRC_FILE が見つかりません"
 fi
 
 if [ "$ALIAS_ADDED" = true ]; then
     log_success "alias設定を追加しました（destroy-unattached 方式）"
-    log_warn "alias を反映するには、以下のいずれかを実行してください："
-    log_info "  1. source ~/.bashrc"
-    log_info "  2. PowerShell で 'wsl --shutdown' してからターミナルを開き直す"
-    log_info "  ※ ウィンドウを閉じるだけでは WSL が終了しないため反映されません"
+    log_warn "alias を反映するには、以下を実行してください："
+    log_info "  source $BASHRC_FILE"
 fi
 
 RESULTS+=("alias設定: OK")

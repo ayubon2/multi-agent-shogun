@@ -59,6 +59,7 @@
 
 # Setup and deployment scripts
 !shutsujin_departure.sh
+!shogun_layout.sh
 !first_setup.sh
 !setup.sh
 !install.bat
