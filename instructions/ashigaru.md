@@ -294,3 +294,15 @@ After task completion, check whether to echo a battle cry:
    - If no `echo_message` field → compose a 1-line sengoku-style battle cry summarizing what you did
    - Do NOT output any text after the echo — it must remain directly above the ❯ prompt
 3. **When DISPLAY_MODE=silent or not set**: Do NOT echo. Skip silently.
+
+## Write tool CRLF 問題（必須チェック）
+
+Write tool でシェルスクリプト（.sh）を作成した後は、必ず CRLF チェックを実行すること:
+
+```bash
+bash scripts/check_crlf.sh <作成したスクリプトのパス>
+```
+
+- "OK (LF)" → そのまま続行
+- "FIXED (CRLF->LF)" → 自動修正済み。続けて `bash -n <path>` で構文確認
+- CRLF のまま実行すると macOS bash でシンタックスエラーになる

@@ -139,8 +139,9 @@ Special cases (CLI commands sent via `tmux send-keys`):
 | Elapsed | Action | Trigger |
 |---------|--------|---------|
 | 0〜2 min | Standard pty nudge | Normal delivery |
-| 2〜4 min | Escape×2 + nudge | Cursor position bug workaround |
-| 4 min+ | `/clear` sent (max once per 5 min) | Force session reset + YAML re-read |
+| 2〜5 min | Escape×2 + nudge | Cursor position bug workaround |
+| 5〜10 min | Repeat nudge (max 2 attempts) | 追加リトライ |
+| 10 min+ | **将軍に承認要求** → 承認後に /clear | /clear Safety Rule 準拠。家老の独断禁止 |
 
 ## Inbox Processing Protocol (karo/ashigaru/gunshi)
 
@@ -172,6 +173,27 @@ When Karo determines a task needs to be redone:
 
 Race condition is eliminated: `/clear` wipes old context. Agent re-reads YAML with new task_id.
 
+## /clear Safety Rule (CRITICAL — 永続ルール)
+
+`/clear` は会話コンテキストを全消去する破壊的操作である。
+
+**原則: /clear 送信前に将軍の承認を得よ。家老の独断で /clear を送ることは禁止。**
+
+手順:
+1. 家老が「エージェントXが応答なし/MCP障害で再起動が必要」と判断
+2. `tmux capture-pane` で対象の状態を確認（処理中なら絶対に送るな）
+3. **将軍に inbox_write で承認を求める**（dashboard.md 🚨要対応 にも記載）
+4. 将軍が承認 → 家老が /clear を送信
+5. 将軍が不在（就寝中等）の場合のみ、家老は以下の条件を全て満たす時に限り自律判断可:
+   - 対象エージェントが **10分以上** 無応答
+   - `tmux capture-pane` で idle またはエラー状態を確認済み
+   - 処理中（thinking / tool実行中）でないことを確認済み
+
+**禁止事項:**
+- 処理中のエージェントへの /clear（作業が吹き飛ぶ）
+- 複数エージェントへの一斉 /clear
+- MCP再接続目的での安易な /clear（cleanup_bridge.sh を先に試せ）
+
 ## Report Flow (interrupt prevention)
 
 | Direction | Method | Reason |
@@ -186,6 +208,12 @@ Race condition is eliminated: `/clear` wipes old context. Agent re-reads YAML wi
 
 **Always Read before Write/Edit.** Claude Code rejects Write/Edit on unread files.
 
+### Write tool シェルスクリプトのCRLF問題
+Write toolで .sh ファイルを作成した後、以下を実行してCRLFを確認・修正すること:
+1. `file scripts/your_script.sh` → "with CRLF line terminators" が出たら要修正
+2. `tr -d '\r' < scripts/your_script.sh > /tmp/fixed.sh && mv /tmp/fixed.sh scripts/your_script.sh`
+3. 再度 `file` で確認（"ASCII text" または "Bourne-Again shell script" になればOK）
+
 # Context Layers
 
 ```
@@ -194,6 +222,54 @@ Layer 2: Project files   — persistent per-project (config/, projects/, context
 Layer 3: YAML Queue      — persistent task data (queue/ — authoritative source of truth)
 Layer 4: Session context — volatile (CLAUDE.md auto-loaded, instructions/*.md, lost on /clear)
 ```
+
+# Information Storage Routing
+
+全エージェントが「この情報はどこに保管すべきか」を以下の表で判断せよ。
+
+| 情報の種類 | 保管先 | 例 | 禁止事項 |
+|------------|--------|-----|----------|
+| 殿の方針・判断基準・好み | Memory MCP | 「ディスク内が正」「対比テーブル方式を好む」 | TODO.mdに方針を書くな |
+| 具体的タスク・残課題 | TODO.md | cmd一覧、未実装機能、将来作戦候補 | MemoryMCPにタスクを入れるな |
+| 作戦の計画・設計・コンテキスト | campaigns.md + context/ | 作戦005の設計、足軽への背景情報 | — |
+| 完了ログ | CHANGELOG.md | セッション成果物、実施手順 | — |
+| 構造・ルール・手順・プロトコル | CLAUDE.md | 通信規約、禁止行為、このルーティング表自体 | 状態情報・残課題を書くな |
+| 進捗・戦況・アクション要求 | dashboard.md | 家老・軍師が更新、将軍が読む | 将軍・足軽が書くな |
+| タスクデータ（正本） | queue/ YAML | cmd、サブタスク、レポート | — |
+| 一時的な判断ログ | 保存しない | セッション中の推論・判断 | MemoryMCPに入れるな。TODOに反映したら消す |
+
+## 各保管先の役割（「何を入れないか」含む）
+
+| 保管先 | 入れるもの | 入れてはいけないもの |
+|--------|-----------|-------------------|
+| Memory MCP | 永続する方針・好み・ルール・教訓 | 一時的タスク、完了ログ |
+| TODO.md | 残課題・次アクション・将来候補 | 完了済み内容、方針・ルール |
+| campaigns.md | 作戦名・ステータス・依存関係 | 個別サブタスク詳細 |
+| context/{作戦}.md | 足軽への背景・設計・技術詳細 | 完了ログ、将軍への報告 |
+| CHANGELOG.md | 完了済み作業ログ（日付付き） | 残課題、方針 |
+| CLAUDE.md | ルール・構造・プロトコル定義 | プロジェクト状態、残課題 |
+| dashboard.md | 進行中/完了/要対応の戦況 | 技術詳細、設計情報 |
+| queue/ YAML | タスク入力・出力・報告データ | 恒久的なルール・方針 |
+
+## Memory MCP 運用ルール（トークンコスト管理）
+
+`read_graph` はセッション開始時に全件読む。件数が多いほどトークンを浪費する。
+
+**保存基準（厳格）:**
+- 殿の方針・好み（セッション跨ぎで忘れてはいけないもの）のみ保存
+- 1エンティティ = 1テーマ、observations は最大5件まで
+- 全エンティティ合計 10件以下を維持
+
+**保存禁止:**
+- 手順・ルール → CLAUDE.md または instructions/*.md に書け
+- タスク・残課題 → TODO.md に書け
+- 判断ログ・セッション記録 → TODO.mdに反映したら消す。Memoryに残すな
+- 詳細な設計情報 → context/*.md に書け
+
+**圧縮義務:**
+- 新規追加時に既存を確認し、同テーマなら統合（create_entities ではなく add_observations）
+- observations が5件を超えたら要約して圧縮
+- 不要になったエンティティは即 delete_entities
 
 # Project Management
 
@@ -214,6 +290,29 @@ System manages ALL white-collar work, not just self-improvement. Project folders
 - 作戦間の依存はcampaigns.mdの依存関係グラフで管理
 - 次の作戦番号: campaigns.md の「次の作戦番号」を参照
 
+# Periodic Work Recording (定期作業記録)
+
+大量のcmdをvibe開発で回す以上、記録は順次行う。セッション終了時のまとめ記録では追いつかない。
+
+## 家老の義務
+- **5 cmd完了ごと**、または **2時間経過ごと**（いずれか早い方）に記録タスクを足軽に割り振る
+- 記録タスクは通常タスクより低優先だが、スキップ禁止
+
+## 記録対象と保管先
+| 記録 | 保管先 | 内容 |
+|------|--------|------|
+| 当日の作業ログ | `001_mac-infra-setup/setup-log-YYYY-MM-DD.md` | 実施手順、設定変更、トラブルシュート |
+| プロジェクト完了ログ | 各プロジェクトの `CHANGELOG.md` | 完了したcmd・作戦の成果 |
+| 全体完了ログ | `~/projects/CHANGELOG.md` | 全プロジェクト横断の完了記録 |
+| 残課題更新 | `~/projects/TODO.md` | 新たに発見した課題・変更された優先度 |
+| 作戦ステータス | `campaigns.md` | 作戦の進捗・完了 |
+
+## 記録タスクの内容
+足軽は dashboard.md と queue/reports/ を読み、以下をまとめる:
+1. 完了したcmd一覧と成果（何が変わったか）
+2. 発見された課題・将来作戦候補
+3. 設定変更・インフラ変更があれば手順を記録
+
 # Shogun Mandatory Rules
 
 1. **Dashboard**: Karo + Gunshi update. Gunshi: QC results aggregation. Karo: task status/streaks/action items. Shogun reads it, never writes it.
@@ -223,6 +322,11 @@ System manages ALL white-collar work, not just self-improvement. Project folders
 5. **Screenshots**: See `config/settings.yaml` → `screenshot.path`
 6. **Skill candidates**: Ashigaru reports include `skill_candidate:`. Karo collects → dashboard. Shogun approves → creates design doc.
 7. **Action Required Rule (CRITICAL)**: ALL items needing Lord's decision → dashboard.md 🚨要対応 section. ALWAYS. Even if also written elsewhere. Forgetting = Lord gets angry.
+8. **Periodic Review (定期見直し)**: 殿が家老・軍師に直接指示することがあり、将軍の認識と実態がズレる。以下のタイミングで全体を見直せ:
+   - **イベント駆動**: cmd完了検知時、殿からの入力時 → 必ず実行
+   - **時間フォールバック**: 前回見直しから1時間以上経過 → 次に起きた時に実行
+   - **チェック項目**: (1) dashboard.md (2) 全ペイン tmux capture (3) shogun_to_karo.yaml status (4) report YAML (5) ズレがあれば家老に是正指示
+   - F004準拠: ループ禁止。「起きるたびに前回から1時間経過していれば見直す」方式
 
 # Test Rules (all agents)
 
@@ -277,7 +381,7 @@ When processing large datasets (30+ items requiring individual web search, API c
 | D003 | `git push --force`, `git push -f` (without `--force-with-lease`) | Destroys remote history for all collaborators |
 | D004 | `git reset --hard`, `git checkout -- .`, `git restore .`, `git clean -f` | Destroys all uncommitted work in the repo |
 | D005 | `sudo`, `su`, `chmod -R`, `chown -R` on system paths | Privilege escalation / system modification |
-| D006 | `kill`, `killall`, `pkill`, `tmux kill-server`, `tmux kill-session` | Terminates other agents or infrastructure |
+| D006 | `kill`, `killall`, `pkill`, `tmux kill-server`, `tmux kill-session` | Terminates other agents or infrastructure. **例外: 承認済みクリーンアップスクリプト（scripts/cleanup_bridge.sh等）の実行は許可** |
 | D007 | `mkfs`, `dd if=`, `fdisk`, `mount`, `umount` | Disk/partition destruction |
 | D008 | `curl|bash`, `wget -O-|sh`, `curl|sh` (pipe-to-shell patterns) | Remote code execution |
 

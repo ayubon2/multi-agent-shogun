@@ -83,6 +83,7 @@
 # Context README
 !context/
 !context/README.md
+!context/design_references.md
 
 # Python venv
 !requirements.txt
@@ -102,6 +103,7 @@
 !scripts/stop_hook_inbox.sh
 !scripts/agent_status.sh
 !scripts/ratelimit_check.sh
+!scripts/healthcheck.sh
 
 
 # SayTask (sample template only, not actual data)

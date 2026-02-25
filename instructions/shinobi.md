@@ -47,6 +47,16 @@ workflow:
     action: set_current_task
     command: 'tmux set-option -p @current_task "{task_id_short}"'
     note: "Extract task_id short form (max ~15 chars)"
+  - step: 3.7
+    action: verify_mcp_connection
+    note: "MANDATORY: Before any work, verify chrome-ai-bridge MCP is functional"
+    procedure: |
+      shinobi_c: call ask_chatgpt_web with question "Reply OK" — expect response
+      shinobi_g: call ask_gemini_web with question "Reply OK" — expect response
+      If MCP call fails or times out:
+        1. Report failure to karo via inbox_write: "MCP接続不可。chrome-ai-bridge確認要"
+        2. Do NOT proceed with task — wait for fix
+        3. Do NOT attempt work without external AI (that defeats the purpose)
   - step: 4
     action: query_external_ai
     note: "Ask assigned external AI via chrome-ai-bridge MCP tools"

@@ -599,6 +599,9 @@ send_context_reset() {
     # Mark /clear timestamp so agent_is_busy() treats it as busy during processing
     if [[ "$reset_cmd" == "/clear" ]]; then
         LAST_CLEAR_TS=$(date +%s)
+        # Extra initial wait for /clear: Claude Code takes ~10s to reinitialize CLAUDE.md
+        # Without this wait, auto-recovery nudge arrives before the agent is ready.
+        sleep 10
     fi
 
     # Poll until agent becomes idle (prompt ready) instead of fixed sleep.
@@ -897,8 +900,8 @@ for s in data.get('specials', []):
     # status チェックを行い、cancelled/idle の場合はスキップする。
     if [ "$clear_seen" -eq 1 ]; then
         # Wait for Karo to update task YAML status (cancellation race condition mitigation).
-        # send_cli_command already slept 3s for /clear; add 5s more = ~8s total before check.
-        sleep 5
+        # send_cli_command already slept 3s for /clear; add 8s more = ~11s total before check.
+        sleep 8
         local recovery_id
         recovery_id=$(enqueue_recovery_task_assigned)
         if [[ "$recovery_id" == SKIP_CANCELLED:* ]]; then
