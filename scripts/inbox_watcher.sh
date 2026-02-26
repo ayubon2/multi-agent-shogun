@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # ═══════════════════════════════════════════════════════════════
 # inbox_watcher.sh — メールボックス監視＆起動シグナル配信
 # Usage: bash scripts/inbox_watcher.sh <agent_id> <pane_target> [cli_type]
@@ -70,6 +70,9 @@ if [ "${__INBOX_WATCHER_TESTING__:-}" != "1" ]; then
             exit 1
         fi
         WATCH_BACKEND="fswatch"
+        if ! command -v gtimeout &>/dev/null; then
+            echo "[inbox_watcher] WARN: gtimeout not found. Using sleep-based fallback (higher CPU). Recommended: brew install coreutils" >&2
+        fi
     else
         # Linux: use inotifywait
         if ! command -v inotifywait &>/dev/null; then
@@ -189,8 +192,13 @@ should_throttle_nudge() {
     local cooldown_sec="${NUDGE_COOLDOWN_SEC:-60}"
     if [[ "$effective_cli" == "codex" ]]; then
         cooldown_sec="${NUDGE_COOLDOWN_SEC_CODEX:-300}"
+    elif [[ "$effective_cli" == "claude" ]]; then
+        # Claude Code: same cooldown as default (60s).
+        # Stop hook is supplementary, not primary — nudge immediately.
+        cooldown_sec="${NUDGE_COOLDOWN_SEC_CLAUDE:-60}"
     fi
 
+    # Standard throttle: skip if same count within cooldown window.
     if [ "${LAST_NUDGE_COUNT:-}" = "$unread_count" ] && [ "${LAST_NUDGE_TS:-0}" -gt 0 ]; then
         local age=$((now - LAST_NUDGE_TS))
         if [ "$age" -lt "${cooldown_sec}" ]; then
@@ -254,12 +262,17 @@ normalize_special_command() {
                 echo "[$(date)] [SKIP] Invalid model_switch payload for $AGENT_ID: ${raw_content:-<empty>}" >&2
             fi
             ;;
+        cli_restart)
+            # cli_restart is handled externally by switch_cli.sh, not via send_cli_command.
+            # Emit a marker so the main loop can call switch_cli.sh.
+            echo "__CLI_RESTART__:${raw_content}"
+            ;;
     esac
 }
 
 enqueue_recovery_task_assigned() {
     (
-        flock -x 200
+        if command -v flock &>/dev/null; then flock -x 200; else _ld="${LOCKFILE}.d"; _i=0; while ! mkdir "$_ld" 2>/dev/null; do sleep 0.1; _i=$((_i+1)); [ $_i -ge 300 ] && break; done; trap "rmdir '$_ld' 2>/dev/null" EXIT; fi
         INBOX_PATH="$INBOX" AGENT_ID="$AGENT_ID" "$SCRIPT_DIR/.venv/bin/python3" - << 'PY'
 import datetime
 import os
@@ -369,7 +382,7 @@ PY
 # Test anchor for bats awk pattern: get_unread_info\\(\\)
 get_unread_info() {
     (
-        flock -x 200
+        if command -v flock &>/dev/null; then flock -x 200; else _ld="${LOCKFILE}.d"; _i=0; while ! mkdir "$_ld" 2>/dev/null; do sleep 0.1; _i=$((_i+1)); [ $_i -ge 300 ] && break; done; trap "rmdir '$_ld' 2>/dev/null" EXIT; fi
         INBOX_PATH="$INBOX" "$SCRIPT_DIR/.venv/bin/python3" - << 'PY'
 import json
 import os
@@ -382,7 +395,7 @@ try:
 
     messages = data.get("messages", []) or []
     unread = [m for m in messages if not m.get("read", False)]
-    special_types = ("clear_command", "model_switch")
+    special_types = ("clear_command", "model_switch", "cli_restart")
     specials = [m for m in unread if m.get("type") in special_types]
 
     if specials:
@@ -425,6 +438,18 @@ send_cli_command() {
     local cmd="$1"
     local effective_cli
     effective_cli=$(get_effective_cli_type)
+
+    # cli_restart: delegate to switch_cli.sh (full /exit → relaunch cycle)
+    if [[ "$cmd" == __CLI_RESTART__:* ]]; then
+        local restart_args="${cmd#__CLI_RESTART__:}"
+        echo "[$(date)] [CLI-RESTART] Delegating to switch_cli.sh for $AGENT_ID: ${restart_args}" >&2
+        bash "${SCRIPT_DIR}/scripts/switch_cli.sh" "$AGENT_ID" $restart_args 2>&1 | while IFS= read -r line; do  # SCRIPT_DIR=project_root
+            echo "[$(date)] [switch_cli] $line" >&2
+        done
+        # Update effective CLI type after restart
+        CLI_TYPE=$(tmux show-options -p -t "$PANE_TARGET" -v @agent_cli 2>/dev/null || echo "$CLI_TYPE")
+        return 0
+    fi
 
     # Safety: never inject CLI commands into the shogun pane.
     # Shogun is controlled by the Lord; keystroke injection can clobber human input.
@@ -493,7 +518,12 @@ send_cli_command() {
         sleep 0.5
     fi
     timeout 5 tmux send-keys -t "$PANE_TARGET" "$actual_cmd" 2>/dev/null || true
-    sleep 0.3
+    # /clear needs longer gap before Enter — CLI prompt may not be ready at 0.3s
+    if [[ "$actual_cmd" == "/clear" || "$actual_cmd" == "/new" ]]; then
+        sleep 1.0
+    else
+        sleep 0.3
+    fi
     timeout 5 tmux send-keys -t "$PANE_TARGET" Enter 2>/dev/null || true
 
     # /clear needs extra wait time before follow-up
@@ -594,7 +624,8 @@ send_context_reset() {
     # Non-Codex CLIs: send /clear and wait for idle
     # Send the command (text and Enter separated for TUI compatibility)
     timeout 5 tmux send-keys -t "$PANE_TARGET" "$reset_cmd" 2>/dev/null || true
-    sleep 0.3
+    # Longer gap for /clear — CLI prompt rendering needs time
+    sleep 1.0
     timeout 5 tmux send-keys -t "$PANE_TARGET" Enter 2>/dev/null || true
     # Mark /clear timestamp so agent_is_busy() treats it as busy during processing
     if [[ "$reset_cmd" == "/clear" ]]; then
@@ -712,8 +743,9 @@ send_wakeup() {
     fi
 
     # 優先度2: Agent busy — nudge送信するとEnterが消失するためスキップ
-    # Claude Code agents: Stop hook handles delivery, no nudge needed at all.
-    if agent_is_busy; then
+    # Claude Code: Stop hook catches unread at turn end. Skip nudge to avoid Enter loss.
+    # Exception: shogun — ntfy must be delivered immediately regardless of busy state.
+    if agent_is_busy && [[ "$AGENT_ID" != "shogun" ]]; then
         local busy_cli_wakeup
         busy_cli_wakeup=$(get_effective_cli_type)
         if [[ "$busy_cli_wakeup" == "claude" ]]; then
@@ -728,14 +760,8 @@ send_wakeup() {
         return 0
     fi
 
-    # Shogun: if the pane is focused AND a human is attached, never inject keys
-    # (it can clobber the Lord's input). Show a tmux message instead.
-    # If session is detached, no human is watching — safe to send-keys normally.
-    if [ "$AGENT_ID" = "shogun" ] && pane_is_active && session_has_client; then
-        echo "[$(date)] [DISPLAY] shogun pane is active + attached — showing nudge: inbox${unread_count}" >&2
-        timeout 2 tmux display-message -t "$PANE_TARGET" -d 5000 "inbox${unread_count}" 2>/dev/null || true
-        return 0
-    fi
+    # Shogun: deliver nudge via send-keys like other agents.
+    # ntfy messages must reach Claude Code directly.
 
     # 優先度3: tmux send-keys（テキストとEnterを分離 — Codex TUI対策）
     echo "[$(date)] [SEND-KEYS] Sending nudge to $PANE_TARGET for $AGENT_ID" >&2
@@ -927,7 +953,8 @@ for s in data.get('specials', []):
         # When the agent is busy/thinking, do NOT escalate. Interrupting with Escape or /clear
         # can terminate the current thought. Also pause the escalation timer while busy so we
         # don't immediately jump to Phase 2/3 once it becomes idle.
-        if agent_is_busy; then
+        # Exception: shogun — ntfy must be delivered immediately.
+        if agent_is_busy && [[ "$AGENT_ID" != "shogun" ]]; then
             local busy_cli
             busy_cli=$(get_effective_cli_type)
             if [[ "$busy_cli" == "claude" ]]; then
@@ -1072,7 +1099,7 @@ while true; do
             FSWATCH_PID=$!
             WAITED=0
             while [ "$WAITED" -lt "$INOTIFY_TIMEOUT" ] && kill -0 "$FSWATCH_PID" 2>/dev/null; do
-                sleep 1
+                sleep 2
                 WAITED=$((WAITED + 1))
             done
             if kill -0 "$FSWATCH_PID" 2>/dev/null; then

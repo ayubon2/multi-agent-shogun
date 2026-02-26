@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # 🏯 multi-agent-shogun 出陣スクリプト（毎日の起動用）
 # Daily Deployment Script for Multi-Agent Orchestration System
 #
@@ -607,37 +607,12 @@ for _ai in "${AGENT_IDS[@]}"; do
     fi
 done
 
-# CLI Adapter経由でモデル名を動的に上書き
+# CLI Adapter経由でモデル表示名を統一形式で設定
+# get_model_display_name(): Sonnet, Opus+T, Haiku, Codex, Spark 等の短縮名を返す
 if [ "$CLI_ADAPTER_LOADED" = true ]; then
     for i in "${!AGENT_IDS[@]}"; do
         _agent="${AGENT_IDS[$i]}"
-        _cli=$(get_cli_type "$_agent")
-        case "$_cli" in
-            claude)
-                _claude_model=$(get_agent_model "$_agent")
-                if [[ -n "$_claude_model" ]]; then
-                    # haiku→Haiku, opus→Opus, sonnet→Sonnet に正規化
-                    MODEL_NAMES[$i]=$(echo "$_claude_model" | awk '{print toupper(substr($0,1,1)) substr($0,2)}')
-                fi
-                ;;
-            codex)
-                # settings.yamlのmodelを優先表示、なければconfig.tomlのeffort
-                _codex_model=$(get_agent_model "$_agent")
-                if [[ -n "$_codex_model" ]]; then
-                    MODEL_NAMES[$i]="codex/${_codex_model}"
-                else
-                    _codex_effort=$(grep '^model_reasoning_effort' ~/.codex/config.toml 2>/dev/null | head -1 | sed 's/.*= *"\(.*\)"/\1/')
-                    _codex_effort=${_codex_effort:-high}
-                    MODEL_NAMES[$i]="codex/${_codex_effort}"
-                fi
-                ;;
-            copilot)
-                MODEL_NAMES[$i]="Copilot"
-                ;;
-            kimi)
-                MODEL_NAMES[$i]="Kimi"
-                ;;
-        esac
+        MODEL_NAMES[$i]=$(get_model_display_name "$_agent")
     done
 fi
 
@@ -691,16 +666,24 @@ if [ "$SETUP_ONLY" = false ]; then
         _shogun_cli_type=$(get_cli_type "shogun")
         _shogun_cmd=$(build_cli_command "shogun")
     fi
-    tmux set-option -p -t "shogun:main" @agent_cli "$_shogun_cli_type"
-    if [ "$SHOGUN_NO_THINKING" = true ] && [ "$_shogun_cli_type" = "claude" ]; then
-        tmux send-keys -t shogun:main "MAX_THINKING_TOKENS=0 $_shogun_cmd"
-        tmux send-keys -t shogun:main Enter
-        log_info "  └─ 将軍（${_shogun_cli_type} / thinking無効）、召喚完了"
-    else
-        tmux send-keys -t shogun:main "$_shogun_cmd"
-        tmux send-keys -t shogun:main Enter
-        log_info "  └─ 将軍（${_shogun_cli_type}）、召喚完了"
+    # --shogun-no-thinking → settings.yaml の thinking を一時的に false にして build_cli_command に任せる
+    if [ "$SHOGUN_NO_THINKING" = true ] && [ "$CLI_ADAPTER_LOADED" = true ]; then
+        "$CLI_ADAPTER_PROJECT_ROOT/.venv/bin/python3" -c "
+import yaml
+f = '${CLI_ADAPTER_SETTINGS}'
+with open(f) as fh: d = yaml.safe_load(fh) or {}
+d.setdefault('cli',{}).setdefault('agents',{}).setdefault('shogun',{})['thinking'] = False
+with open(f,'w') as fh: yaml.safe_dump(d, fh, default_flow_style=False, allow_unicode=True, sort_keys=False)
+" 2>/dev/null
+        _shogun_cmd=$(build_cli_command "shogun")
+        log_info "  └─ 将軍 settings.yaml thinking=false に設定"
     fi
+    tmux set-option -p -t "shogun:main" @agent_cli "$_shogun_cli_type"
+    tmux send-keys -t shogun:main "$_shogun_cmd"
+    tmux send-keys -t shogun:main Enter
+    _shogun_display=$(get_model_display_name "shogun" 2>/dev/null || echo "Opus")
+    tmux set-option -p -t "shogun:main" @model_name "$_shogun_display" 2>/dev/null || true
+    log_info "  └─ 将軍（${_shogun_cli_type} / ${_shogun_display}）、召喚完了"
 
     # 少し待機（安定のため）
     sleep 1
@@ -721,7 +704,9 @@ if [ "$SETUP_ONLY" = false ]; then
     tmux set-option -p -t "multiagent:agents.${p}" @agent_cli "$_karo_cli_type"
     tmux send-keys -t "multiagent:agents.${p}" "$_karo_cmd"
     tmux send-keys -t "multiagent:agents.${p}" Enter
-    log_info "  └─ 家老（${_karo_cli_type}）、召喚完了"
+    _karo_display=$(get_model_display_name "karo" 2>/dev/null || echo "Sonnet")
+    tmux set-option -p -t "multiagent:agents.${p}" @model_name "$_karo_display" 2>/dev/null || true
+    log_info "  └─ 家老（${_karo_display}）、召喚完了"
 
     if [ "$KESSEN_MODE" = true ]; then
         # 決戦の陣: CLI Adapter経由（claudeはOpus強制）
@@ -789,7 +774,9 @@ if [ "$SETUP_ONLY" = false ]; then
     tmux set-option -p -t "multiagent:agents.${p}" @agent_cli "$_gunshi_cli_type"
     tmux send-keys -t "multiagent:agents.${p}" "$_gunshi_cmd"
     tmux send-keys -t "multiagent:agents.${p}" Enter
-    log_info "  └─ 軍師（${_gunshi_cli_type} / Opus Thinking）、召喚完了"
+    _gunshi_display=$(get_model_display_name "gunshi" 2>/dev/null || echo "Opus+T")
+    tmux set-option -p -t "multiagent:agents.${p}" @model_name "$_gunshi_display" 2>/dev/null || true
+    log_info "  └─ 軍師（${_gunshi_display}）、召喚完了"
 
     if [ "$KESSEN_MODE" = true ]; then
         log_success "✅ 決戦の陣で出陣！全軍Opus！"

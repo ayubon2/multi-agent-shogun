@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # ═══════════════════════════════════════════════════════════════
 # ntfy Input Listener
 # Streams messages from ntfy topic, writes to inbox YAML, wakes shogun.
@@ -51,7 +51,13 @@ append_ntfy_inbox() {
     local msg="$3"
 
     (
-        flock -w 5 200 || exit 1
+        if command -v flock &>/dev/null; then
+            flock -w 5 200 || exit 1
+        else
+            _ld="${LOCKFILE}.d"; _i=0
+            while ! mkdir "$_ld" 2>/dev/null; do sleep 0.1; _i=$((_i+1)); [ $_i -ge 50 ] && exit 1; done
+            trap "rmdir '$_ld' 2>/dev/null" EXIT
+        fi
         NTFY_INBOX_PATH="$INBOX" \
         NTFY_CORRUPT_DIR="$CORRUPT_DIR" \
         MSG_ID="$msg_id" \
@@ -159,8 +165,7 @@ while true; do
             continue
         fi
 
-        # Auto-reply acknowledgement
-        bash "$SCRIPT_DIR/scripts/ntfy.sh" "📱受信: $MSG"
+        # Auto-reply removed — shogun replies directly after processing.
 
         # Wake shogun via inbox (ntfy処理は将軍が直接受信)
         bash "$SCRIPT_DIR/scripts/inbox_write.sh" shogun \

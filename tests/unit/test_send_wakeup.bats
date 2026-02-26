@@ -38,7 +38,7 @@
 #   T-CODEX-012: auto-recovery task_assignedは重複投入しない
 #   T-SHOGUN-001: session_has_client — returns 0 when client attached
 #   T-SHOGUN-002: session_has_client — returns 1 when no client
-#   T-SHOGUN-003: send_wakeup — shogun + active + attached → display-message only
+#   T-SHOGUN-003: send_wakeup — shogun + active + attached → send-keys (post PR#75)
 #   T-SHOGUN-004: send_wakeup — shogun + active + detached → send-keys fallthrough
 #   T-BUSY-005: agent_is_busy — returns busy during /clear cooldown (LAST_CLEAR_TS)
 #   T-BUSY-006: agent_is_busy — returns idle after /clear cooldown expires
@@ -47,6 +47,9 @@
 #   T-BUSY-009: agent_is_busy — 'background terminal running' detected as busy
 #   T-BUSY-010: agent_is_busy — 'Compacting conversation' detected as busy
 #   T-BUSY-011: agent_is_busy — 'esc to interrupt' alone detected as busy
+#   T-SHOOK-001: Claude Code throttle uses 60s cooldown (stop-hook-supplementary)
+#   T-SHOOK-002: Claude Code count change bypasses throttle (stop-hook-supplementary)
+#   T-SHOOK-003: Non-Claude CLIs still bypass throttle on count change
 #   T-CRESET-001: send_context_reset — suppresses /clear for karo
 #   T-CRESET-002: send_context_reset — suppresses /clear for gunshi
 #   T-CRESET-003: send_context_reset — sends /clear for ashigaru
@@ -825,9 +828,9 @@ YAML
     [ "$status" -ne 0 ]
 }
 
-# --- T-SHOGUN-003: shogun + active pane + client attached → display-message only ---
+# --- T-SHOGUN-003: shogun + active pane + client attached → send-keys (post PR#75) ---
 
-@test "T-SHOGUN-003: send_wakeup shogun + active + attached uses display-message only" {
+@test "T-SHOGUN-003: send_wakeup shogun + active + attached uses send-keys" {
     run bash -c '
         MOCK_PANE_ACTIVE="1"
         MOCK_LIST_CLIENTS="/dev/pts/1: mock_session [200x50 xterm-256color]"
@@ -837,11 +840,8 @@ YAML
     '
     [ "$status" -eq 0 ]
 
-    # display-message was used for nudge
-    echo "$output" | grep -q "DISPLAY"
-
-    # send-keys with inbox should NOT have occurred
-    ! grep -q "send-keys.*inbox" "$MOCK_LOG"
+    # Post PR#75: shogun uses send-keys like other agents (display-message path removed)
+    grep -q "send-keys.*inbox2" "$MOCK_LOG"
 }
 
 # --- T-SHOGUN-004: shogun + active pane + no client → send-keys fallthrough ---
@@ -965,6 +965,86 @@ YAML
         agent_is_busy
     '
     [ "$status" -eq 0 ]
+}
+
+# --- T-SHOOK-001: Claude Code throttle uses 60s cooldown (post PR#75: stop-hook supplementary) ---
+
+@test "T-SHOOK-001: Claude Code throttle uses 60s cooldown (stop-hook-supplementary)" {
+    run bash -c '
+        source "'"$TEST_HARNESS"'"
+        CLI_TYPE="claude"
+        LAST_NUDGE_TS=0
+        LAST_NUDGE_COUNT=""
+
+        # First call: should pass through (no throttle)
+        should_throttle_nudge 1
+        rc1=$?
+
+        # Simulate 60s elapsed — cooldown expired for claude (60s, same as default)
+        LAST_NUDGE_TS=$(($(date +%s) - 60))
+        LAST_NUDGE_COUNT=1
+
+        # Second call with same count after 60s: should NOT throttle (cooldown expired)
+        should_throttle_nudge 1
+        rc2=$?
+
+        echo "rc1=$rc1 rc2=$rc2"
+    '
+    [ "$status" -eq 0 ]
+    echo "$output" | grep -q "rc1=1 rc2=1"  # 1=not-throttled, 1=not-throttled (60s cooldown expired)
+}
+
+# --- T-SHOOK-002: Claude Code count change bypasses throttle (post PR#75: standard behavior) ---
+
+@test "T-SHOOK-002: Claude Code count change bypasses throttle (stop-hook-supplementary)" {
+    run bash -c '
+        source "'"$TEST_HARNESS"'"
+        CLI_TYPE="claude"
+        LAST_NUDGE_TS=0
+        LAST_NUDGE_COUNT=""
+
+        # First call: should pass through
+        should_throttle_nudge 1
+        rc1=$?
+
+        # Simulate 30s elapsed, count changed from 1 to 2
+        LAST_NUDGE_TS=$(($(date +%s) - 30))
+
+        # Post PR#75: Claude uses standard throttle logic.
+        # Count change (1→2) bypasses throttle for ALL CLIs including claude.
+        should_throttle_nudge 2
+        rc2=$?
+
+        echo "rc1=$rc1 rc2=$rc2"
+    '
+    [ "$status" -eq 0 ]
+    echo "$output" | grep -q "rc1=1 rc2=1"  # Both: 1=not-throttled (count change bypasses)
+}
+
+# --- T-SHOOK-003: Non-Claude CLIs bypass throttle on count change ---
+
+@test "T-SHOOK-003: Non-Claude CLIs still bypass throttle on count change" {
+    run bash -c '
+        source "'"$TEST_HARNESS"'"
+        CLI_TYPE="copilot"
+        LAST_NUDGE_TS=0
+        LAST_NUDGE_COUNT=""
+
+        # First call
+        should_throttle_nudge 1
+        rc1=$?
+
+        # Simulate 30s elapsed, count changed from 1 to 2
+        LAST_NUDGE_TS=$(($(date +%s) - 30))
+
+        # For copilot, count change (1→2) SHOULD bypass throttle
+        should_throttle_nudge 2
+        rc2=$?
+
+        echo "rc1=$rc1 rc2=$rc2"
+    '
+    [ "$status" -eq 0 ]
+    echo "$output" | grep -q "rc1=1 rc2=1"  # Both pass through (count changed)
 }
 
 # --- T-CRESET-001: send_context_reset suppresses /clear for karo ---

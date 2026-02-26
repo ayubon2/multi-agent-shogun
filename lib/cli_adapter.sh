@@ -122,12 +122,23 @@ except Exception as e:
 
 # build_cli_command(agent_id)
 # エージェントを起動するための完全なコマンド文字列を返す
+# settings.yaml の thinking: false → MAX_THINKING_TOKENS=0 を先頭に付与
 build_cli_command() {
     local agent_id="$1"
     local cli_type
     cli_type=$(get_cli_type "$agent_id")
     local model
     model=$(get_agent_model "$agent_id")
+    local thinking
+    thinking=$(_cli_adapter_read_yaml "cli.agents.${agent_id}.thinking" "")
+
+    # thinking prefix: Claude CLI でのみ有効
+    # thinking: true or 未設定 → そのまま（デフォルトでThinking ON）
+    # thinking: false → MAX_THINKING_TOKENS=0 を先頭に付与
+    local prefix=""
+    if [[ "$cli_type" == "claude" && "$thinking" == "false" || "$thinking" == "False" ]]; then
+        prefix="MAX_THINKING_TOKENS=0 "
+    fi
 
     case "$cli_type" in
         claude)
@@ -136,7 +147,7 @@ build_cli_command() {
                 cmd="$cmd --model $model"
             fi
             cmd="$cmd --dangerously-skip-permissions"
-            echo "$cmd"
+            echo "${prefix}${cmd}"
             ;;
         codex)
             local cmd="codex"
@@ -276,6 +287,48 @@ get_agent_model() {
             esac
             ;;
     esac
+}
+
+# get_model_display_name(agent_id)
+# pane-border-format 用の短い表示名を返す
+# Format: "{ShortName}" or "{ShortName}+T" (thinking enabled)
+# Examples: Sonnet, Opus+T, Haiku, Codex, Spark
+get_model_display_name() {
+    local agent_id="$1"
+    local model
+    model=$(get_agent_model "$agent_id")
+    local cli_type
+    cli_type=$(get_cli_type "$agent_id")
+    local thinking
+    thinking=$(_cli_adapter_read_yaml "cli.agents.${agent_id}.thinking" "")
+
+    # モデル名 → 短縮表示名
+    local short=""
+    case "$model" in
+        *spark*)                short="Spark" ;;
+        *codex*|gpt-5.3)        short="Codex" ;;
+        *opus*)                 short="Opus" ;;
+        *sonnet*)               short="Sonnet" ;;
+        *haiku*)                short="Haiku" ;;
+        *k2.5*|*kimi*)          short="Kimi" ;;
+        *)
+            # CLI種別から推測
+            case "$cli_type" in
+                codex)   short="Codex" ;;
+                copilot) short="Copilot" ;;
+                kimi)    short="Kimi" ;;
+                *)       short="$model" ;;
+            esac
+            ;;
+    esac
+
+    # Thinking表示: 明示的に設定されている場合のみ "+T" を付与
+    # thinking: true → "+T", thinking: false or 未設定 → なし
+    if [[ "$thinking" == "true" || "$thinking" == "True" ]]; then
+        echo "${short}+T"
+    else
+        echo "$short"
+    fi
 }
 
 # get_startup_prompt(agent_id)
@@ -443,6 +496,17 @@ get_recommended_model() {
     result=$("$CLI_ADAPTER_PROJECT_ROOT/.venv/bin/python3" -c "
 import yaml, sys
 
+def parse_bloom_range(key):
+    '''parse 'L1-L3' -> [1,2,3], 'L4-L5' -> [4,5], 'L6' -> [6]'''
+    key = key.strip()
+    if '-' in key[1:]:  # e.g. L1-L3
+        parts = key.split('-')
+        start = int(parts[0].lstrip('Ll'))
+        end = int(parts[1].lstrip('Ll'))
+        return list(range(start, end + 1))
+    else:  # e.g. L6
+        return [int(key.lstrip('Ll'))]
+
 try:
     with open('${settings}') as f:
         cfg = yaml.safe_load(f) or {}
@@ -460,6 +524,40 @@ try:
     else:
         allowed_groups = None
 
+    # bloom_model_preference: 定義あり→優先順位ルーティング
+    preference = cfg.get('bloom_model_preference')
+    if preference and isinstance(preference, dict):
+        # 入力bloom_levelに該当するレンジキーを特定
+        matched_list = None
+        for range_key, model_list in preference.items():
+            try:
+                levels = parse_bloom_range(range_key)
+                if bloom in levels:
+                    matched_list = model_list
+                    break
+            except (ValueError, IndexError):
+                continue
+
+        if matched_list and isinstance(matched_list, list):
+            # リスト順にモデルを走査
+            for pref_model in matched_list:
+                spec = tiers.get(pref_model)
+                if not isinstance(spec, dict):
+                    continue
+                mb = spec.get('max_bloom', 6)
+                cg = spec.get('cost_group', 'unknown')
+                # (a) available_cost_groups除外チェック
+                if allowed_groups is not None and cg not in allowed_groups:
+                    continue
+                # (b) capability_tiersのmax_bloom >= bloom_level
+                if isinstance(mb, int) and mb >= bloom:
+                    print(pref_model)
+                    sys.exit(0)
+            # 全滅 → fallback + 警告
+            print('WARNING: All preferred models unavailable for bloom level ' + str(bloom) + ', falling back to cost_priority', file=sys.stderr)
+            # fallthrough to legacy cost_priority logic
+
+    # 従来のcost_priority自動選択（後方互換）
     candidates = []
     all_models = []
     for model, spec in tiers.items():

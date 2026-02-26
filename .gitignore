@@ -104,15 +104,18 @@
 !scripts/agent_status.sh
 !scripts/ratelimit_check.sh
 !scripts/healthcheck.sh
+!scripts/switch_cli.sh
 
 
 # SayTask (sample template only, not actual data)
 !saytask/
 !saytask/streaks.yaml.sample
 
-# Reports (requirements docs only — other reports may contain secrets)
-!reports/
-!reports/requirements_*.md
+# Reports (private — not tracked)
+
+# Memory (MEMORY.md is private; only the sample template is OSS)
+!memory/
+!memory/MEMORY.md.sample
 
 # Docs
 !docs/
@@ -144,6 +147,10 @@
 !skills/shogun-model-list/SKILL.md
 !skills/shogun-bloom-config/
 !skills/shogun-bloom-config/SKILL.md
+!skills/shogun-model-switch/
+!skills/shogun-model-switch/SKILL.md
+!skills/shogun-readme-sync/
+!skills/shogun-readme-sync/SKILL.md
 
 # Test specs
 !tests/specs/

@@ -547,3 +547,204 @@ load_adapter_with() {
     result=$(get_agent_model "karo")
     [ "$result" = "k2.5" ]
 }
+
+# =============================================================================
+# get_model_display_name テスト
+# =============================================================================
+
+@test "get_model_display_name: Sonnet + thinking:true → Sonnet+T" {
+    cat > "${TEST_TMP}/settings_display.yaml" << 'YAML'
+cli:
+  default: claude
+  agents:
+    ashigaru1:
+      type: claude
+      model: claude-sonnet-4-6
+      thinking: true
+YAML
+    load_adapter_with "${TEST_TMP}/settings_display.yaml"
+    result=$(get_model_display_name "ashigaru1")
+    [ "$result" = "Sonnet+T" ]
+}
+
+@test "get_model_display_name: Opus + thinking:true → Opus+T" {
+    cat > "${TEST_TMP}/settings_display.yaml" << 'YAML'
+cli:
+  default: claude
+  agents:
+    gunshi:
+      type: claude
+      model: claude-opus-4-6
+      thinking: true
+YAML
+    load_adapter_with "${TEST_TMP}/settings_display.yaml"
+    result=$(get_model_display_name "gunshi")
+    [ "$result" = "Opus+T" ]
+}
+
+@test "get_model_display_name: Haiku + thinking:false → Haiku" {
+    cat > "${TEST_TMP}/settings_display.yaml" << 'YAML'
+cli:
+  default: claude
+  agents:
+    ashigaru2:
+      type: claude
+      model: claude-haiku-4-5-20251001
+      thinking: false
+YAML
+    load_adapter_with "${TEST_TMP}/settings_display.yaml"
+    result=$(get_model_display_name "ashigaru2")
+    [ "$result" = "Haiku" ]
+}
+
+@test "get_model_display_name: Sonnet + thinking未設定 → Sonnet (no +T)" {
+    cat > "${TEST_TMP}/settings_display.yaml" << 'YAML'
+cli:
+  default: claude
+  agents:
+    ashigaru3:
+      type: claude
+      model: claude-sonnet-4-6
+YAML
+    load_adapter_with "${TEST_TMP}/settings_display.yaml"
+    result=$(get_model_display_name "ashigaru3")
+    [ "$result" = "Sonnet" ]
+}
+
+@test "get_model_display_name: Codex Spark → Spark (thinking無関係)" {
+    cat > "${TEST_TMP}/settings_display.yaml" << 'YAML'
+cli:
+  default: claude
+  agents:
+    ashigaru4:
+      type: codex
+      model: gpt-5.3-codex-spark
+YAML
+    load_adapter_with "${TEST_TMP}/settings_display.yaml"
+    result=$(get_model_display_name "ashigaru4")
+    [ "$result" = "Spark" ]
+}
+
+@test "get_model_display_name: Codex 5.3 → Codex" {
+    cat > "${TEST_TMP}/settings_display.yaml" << 'YAML'
+cli:
+  default: claude
+  agents:
+    ashigaru5:
+      type: codex
+      model: gpt-5.3-codex
+YAML
+    load_adapter_with "${TEST_TMP}/settings_display.yaml"
+    result=$(get_model_display_name "ashigaru5")
+    [ "$result" = "Codex" ]
+}
+
+@test "get_model_display_name: Kimi → Kimi" {
+    cat > "${TEST_TMP}/settings_display.yaml" << 'YAML'
+cli:
+  default: kimi
+  agents:
+    ashigaru6:
+      type: kimi
+      model: k2.5
+YAML
+    load_adapter_with "${TEST_TMP}/settings_display.yaml"
+    result=$(get_model_display_name "ashigaru6")
+    [ "$result" = "Kimi" ]
+}
+
+@test "get_model_display_name: 全モデル × thinking組み合わせ" {
+    cat > "${TEST_TMP}/settings_display_all.yaml" << 'YAML'
+cli:
+  default: claude
+  agents:
+    ashigaru1:
+      type: claude
+      model: claude-sonnet-4-6
+      thinking: true
+    ashigaru2:
+      type: claude
+      model: claude-opus-4-6
+      thinking: false
+    ashigaru3:
+      type: claude
+      model: claude-haiku-4-5-20251001
+      thinking: true
+    ashigaru4:
+      type: codex
+      model: gpt-5.3-codex-spark
+    ashigaru5:
+      type: codex
+      model: gpt-5.3-codex
+YAML
+    load_adapter_with "${TEST_TMP}/settings_display_all.yaml"
+    [ "$(get_model_display_name ashigaru1)" = "Sonnet+T" ]
+    [ "$(get_model_display_name ashigaru2)" = "Opus" ]
+    [ "$(get_model_display_name ashigaru3)" = "Haiku+T" ]
+    [ "$(get_model_display_name ashigaru4)" = "Spark" ]
+    [ "$(get_model_display_name ashigaru5)" = "Codex" ]
+}
+
+# =============================================================================
+# build_cli_command Thinking制御テスト
+# =============================================================================
+
+@test "build_cli_command: thinking:true → MAX_THINKING_TOKENS=0 なし" {
+    cat > "${TEST_TMP}/settings_thinking.yaml" << 'YAML'
+cli:
+  default: claude
+  agents:
+    ashigaru1:
+      type: claude
+      model: claude-sonnet-4-6
+      thinking: true
+YAML
+    load_adapter_with "${TEST_TMP}/settings_thinking.yaml"
+    result=$(build_cli_command "ashigaru1")
+    [ "$result" = "claude --model claude-sonnet-4-6 --dangerously-skip-permissions" ]
+}
+
+@test "build_cli_command: thinking:false → MAX_THINKING_TOKENS=0 prefix" {
+    cat > "${TEST_TMP}/settings_thinking.yaml" << 'YAML'
+cli:
+  default: claude
+  agents:
+    ashigaru1:
+      type: claude
+      model: claude-sonnet-4-6
+      thinking: false
+YAML
+    load_adapter_with "${TEST_TMP}/settings_thinking.yaml"
+    result=$(build_cli_command "ashigaru1")
+    [ "$result" = "MAX_THINKING_TOKENS=0 claude --model claude-sonnet-4-6 --dangerously-skip-permissions" ]
+}
+
+@test "build_cli_command: thinking未設定 → MAX_THINKING_TOKENS=0 なし (デフォルトThinking ON)" {
+    cat > "${TEST_TMP}/settings_thinking.yaml" << 'YAML'
+cli:
+  default: claude
+  agents:
+    ashigaru1:
+      type: claude
+      model: claude-sonnet-4-6
+YAML
+    load_adapter_with "${TEST_TMP}/settings_thinking.yaml"
+    result=$(build_cli_command "ashigaru1")
+    [ "$result" = "claude --model claude-sonnet-4-6 --dangerously-skip-permissions" ]
+}
+
+@test "build_cli_command: codex + thinking:false → MAX_THINKING_TOKENS=0 なし (Codexには無関係)" {
+    cat > "${TEST_TMP}/settings_thinking.yaml" << 'YAML'
+cli:
+  default: claude
+  agents:
+    ashigaru5:
+      type: codex
+      model: gpt-5.3-codex
+      thinking: false
+YAML
+    load_adapter_with "${TEST_TMP}/settings_thinking.yaml"
+    result=$(build_cli_command "ashigaru5")
+    [[ "$result" != MAX_THINKING_TOKENS* ]]
+    [[ "$result" == codex* ]]
+}
