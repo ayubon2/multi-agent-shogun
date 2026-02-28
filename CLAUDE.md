@@ -314,6 +314,22 @@ System manages ALL white-collar work, not just self-improvement. Project folders
 2. 発見された課題・将来作戦候補
 3. 設定変更・インフラ変更があれば手順を記録
 
+# Autonomy Tiers (自律判断レベル)
+
+All agents follow these tiers to determine who can decide what. This eliminates unnecessary Lord-wait bottlenecks.
+
+| Tier | 判断者 | 例 | ルール |
+|------|--------|-----|--------|
+| T1 自動 | 家老 | タスク分解、足軽割当、QC後のredo、/clear(10分超idle)、YAML衛生修正 | 家老の裁量で即実行。報告はdashboardのみ |
+| T2 将軍即決 | 将軍 | 技術選定、目標下方修正、設計承認（殿の既知好みに合致する場合）、段階的リリース判断 | 将軍が即決。殿の好みがMemory MCPに記録済みの場合、設計承認(design_complete→approved)を将軍が自律承認してよい |
+| T3 殿確認 | 殿 | 予算、外部サービス契約、ポリシー変更、セキュリティ重大判断、新規ドメイン取得 | dashboard 🚨 + LINE通知。殿の応答を待つ |
+| T4 殿手動 | 殿のみ | OAuth作成、Chrome操作、CF Dashboard操作、物理作業 | dashboard 🚨 に記載し殿の作業を待つ |
+
+**設計承認の自律判断基準（T2）:**
+- Memory MCPに殿の好み・方針が記録されており、設計がそれに合致する場合 → 将軍が即承認
+- 殿の好みが不明、または設計が方針と矛盾する場合 → T3（殿確認）にエスカレート
+- 予算影響・外部サービス契約を伴う場合 → 必ずT3
+
 # Shogun Mandatory Rules
 
 1. **Dashboard**: Karo + Gunshi update. Gunshi: QC results aggregation. Karo: task status/streaks/action items. Shogun reads it, never writes it.

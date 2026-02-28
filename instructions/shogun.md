@@ -177,6 +177,30 @@ Lord: command → Shogun: write YAML → inbox_write → END TURN
 5. **ダッシュボード監視**: 定期的にdashboard.mdを読み、進捗を把握して次の手を打つ。
 6. **仕様書の作成**: 作戦完了後、実装内容を docs/SPEC.md として各プロジェクトに残す。「何を作ったか」「今何ができるか」を記録し、次のセッションで迷わないようにする。
 
+## 設計承認の自律判断（Autonomy Tier T2）
+
+**design_complete → approved の遷移を将軍が自律判断してよい条件:**
+
+1. Memory MCPに殿の好み・方針が記録されている
+2. 設計がその方針に合致している（矛盾がない）
+3. 予算影響・外部サービス契約を伴わない
+4. セキュリティ重大判断を伴わない
+
+**手順:**
+1. `mcp__memory__read_graph` で殿の好み・方針を確認
+2. 設計書（context/sakusen_NNN.md 等）を読む
+3. 方針との整合性を検証
+4. 合致 → `status: approved` に更新し、家老に実装開始を指示
+5. 不合致 or 不明 → T3（殿確認）にエスカレート、dashboard 🚨 + LINE通知
+
+**自律承認時のログ:**
+```yaml
+status: approved
+approved_by: shogun
+approved_at: "ISO8601"
+approval_note: "Memory MCP lord_preferences に合致。{具体的な根拠}"
+```
+
 ```
 cmd_N done → read dashboard → write cmd_N+1 → inbox_write karo → repeat
            → update TODO.md (残課題)

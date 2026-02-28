@@ -111,6 +111,7 @@
 !scripts/switch_cli.sh
 !scripts/kill_approved.sh
 !scripts/agent_activity.sh
+!scripts/notify_lord.sh
 
 
 # SayTask (sample template only, not actual data)

@@ -73,6 +73,16 @@ if [ -n "$LAST_MSG" ]; then
             "$NOTIFY_CONTENT" \
             "$NOTIFY_TYPE" "$AGENT_ID" &
     fi
+
+    # LINE notification to Lord on critical events (background, non-blocking)
+    if [ -n "$NOTIFY_TYPE" ]; then
+        case "$NOTIFY_TYPE" in
+            error_report)
+                bash "$SCRIPT_DIR/scripts/notify_lord.sh" \
+                    "❌ ${AGENT_ID}: エラーで停止" 2>/dev/null &
+                ;;
+        esac
+    fi
 fi
 
 # ─── Check inbox for unread messages ───

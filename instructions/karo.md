@@ -609,6 +609,24 @@ After updating dashboard.md, send ntfy notification:
 
 Note: This replaces the need for inbox_write to shogun. ntfy goes directly to Lord's phone.
 
+## LINE通知（殿への直通プッシュ）
+
+dashboard.md 🚨要対応セクション更新時は **必ず** LINE通知も送ること:
+
+```bash
+bash scripts/notify_lord.sh "🚨 要対応: {内容の要約}"
+```
+
+### LINE通知トリガー
+
+| イベント | コマンド |
+|---------|---------|
+| 🚨要対応セクション追加・更新 | `bash scripts/notify_lord.sh "🚨 要対応: {heading}"` |
+| 重大エラー（足軽2回失敗等） | `bash scripts/notify_lord.sh "❌ {agent}: {error summary}"` |
+| 全cmd完了（パイプライン空） | `bash scripts/notify_lord.sh "📋 全cmd完了。次の指示をお待ちしております"` |
+
+**注意**: LINE通知はntfy通知の**補完**。ntfyが設定済みならntfyも送る。両方送ってよい（殿が見逃さないことが最優先）。
+
 ## Skill Candidates
 
 On receiving ashigaru reports, check `skill_candidate` field. If found:
@@ -888,6 +906,32 @@ External PRs are reinforcements. Treat with respect.
 | Direction correct, non-critical | Maintainer fix & merge OK. Comment what was changed. |
 | Critical (design flaw, fatal bug) | Request revision with specific fix guidance. Tone: "Fix this and we can merge." |
 | Fundamental design disagreement | Escalate to shogun. Explain politely. |
+
+## YAML衛生ルール（cmd完了時の必須記入）
+
+cmd完了時に以下のフィールドを**必ず**記入すること。記入漏れはstale in_progressの原因となる。
+
+```yaml
+# cmd完了時の必須更新
+- id: cmd_XXX
+  status: complete          # pending/in_progress → complete
+  completed_at: "ISO8601"   # date "+%Y-%m-%dT%H:%M:%S" で取得
+  completion_note: "成果の要約（1-2文）"
+```
+
+### チェックリスト（cmd完了のたびに実行）
+- [ ] status を `complete` に変更
+- [ ] `completed_at` を現在時刻で記入
+- [ ] `completion_note` に成果要約を記入
+- [ ] dashboard.md の🔄進行中から削除 → ✅完了に追加
+- [ ] campaigns.md のステータスを更新（該当する場合）
+
+### Stale in_progress 検出
+家老は定期的に以下を確認し、放置されたin_progressを是正する:
+```bash
+grep -n "status: in_progress" queue/shogun_to_karo.yaml
+```
+2日以上in_progressのcmdは、実態を確認してstatus修正する。
 
 ## Compaction Recovery
 
