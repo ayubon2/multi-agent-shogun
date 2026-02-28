@@ -27,6 +27,10 @@
 !.claude/
 !.claude/settings.json
 
+# Claude Code skills (project-specific commands)
+!.claude/commands/
+!.claude/commands/*.md
+
 # Instructions (core OSS)
 !instructions/
 !instructions/shogun.md
@@ -105,6 +109,8 @@
 !scripts/ratelimit_check.sh
 !scripts/healthcheck.sh
 !scripts/switch_cli.sh
+!scripts/kill_approved.sh
+!scripts/agent_activity.sh
 
 
 # SayTask (sample template only, not actual data)
