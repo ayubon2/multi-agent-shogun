@@ -159,9 +159,14 @@
 !skills/shogun-readme-sync/
 !skills/shogun-readme-sync/SKILL.md
 
+# Python venv (explicit deny — whitelist patterns like LICENSE leak through !*/)
+.venv/
+
 # Test specs
 !tests/specs/
 !tests/specs/*.md
+# Client project specs (not OSS — re-exclude after whitelist)
+tests/specs/osato_lms_*
 
 # Tests
 !tests/
@@ -190,3 +195,7 @@
 !.github/workflows/
 !.github/workflows/*.yml
 projects/madb-dataset/
+
+# Android companion app
+!android/
+!android/**

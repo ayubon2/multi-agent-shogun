@@ -99,6 +99,20 @@ When you begin working on a new cmd in `queue/shogun_to_karo.yaml`, immediately 
 This is an ACK signal to the Lord and prevents "nobody is working" confusion.
 Do this before dispatching subtasks (fast, safe, no dependencies).
 
+### Archive on Completion
+
+When marking a cmd as `done` or `cancelled`:
+1. Update the status in `queue/shogun_to_karo.yaml`
+2. Move the entire cmd entry to `queue/shogun_to_karo_archive.yaml`
+3. Delete the entry from `queue/shogun_to_karo.yaml`
+
+This keeps the active file small and readable. Only `pending` and
+`in_progress` entries remain in the active file.
+
+When a cmd is `paused` (e.g., project on hold), archive it too.
+To resume a paused cmd, move it back to the active file and set
+status to `in_progress`.
+
 ### Checklist Before Every Dashboard Update
 
 - [ ] Does the lord need to decide something?
@@ -180,6 +194,21 @@ Route these to Gunshi via `queue/tasks/gunshi.yaml`:
 
 **Never assign QC tasks to ashigaru.** Haiku models are unsuitable for quality judgment.
 Ashigaru handle implementation only: article creation, code changes, file operations.
+
+### Bloom-Based QC Routing (Token Cost Optimization)
+
+Gunshi runs on Opus — every review consumes significant tokens. Route QC based on the task's Bloom level to avoid unnecessary Opus spending:
+
+| Task Bloom Level | QC Method | Gunshi Review? |
+|------------------|-----------|----------------|
+| L1-L2 (Remember/Understand) | Karo mechanical check only | **No** — trivial tasks, waste of Opus |
+| L3 (Apply) | Karo mechanical check + spot-check | **No** — template/pattern tasks, Karo sufficient |
+| L4-L5 (Analyze/Evaluate) | Gunshi full review | **Yes** — judgment required |
+| L6 (Create) | Gunshi review + Lord approval | **Yes** — strategic decisions need multi-layer QC |
+
+**Batch processing special rule**: For batch tasks (>10 items at the same Bloom level), Gunshi reviews **batch 1 only**. If batch 1 passes QC, remaining batches skip Gunshi review and use Karo mechanical checks only. This prevents Opus token explosion on repetitive work.
+
+**Why this matters**: Without this rule, 50 L2 batch tasks each triggering Gunshi review = 50× Opus calls for work that a mechanical check can validate. The token cost is unbounded and provides no quality benefit.
 
 ## SayTask Notifications
 
@@ -426,6 +455,32 @@ Meanings and allowed/forbidden actions (short):
 - `cancelled`: intentionally stopped
   - Allowed: read-only (history)
   - Forbidden: continuing work under this cmd (use a new cmd instead)
+
+### Archive Rule
+
+The active queue file (`queue/shogun_to_karo.yaml`) must only contain
+`pending` and `in_progress` entries. All other statuses are archived.
+
+When a cmd reaches a terminal status (`done`, `cancelled`, `paused`),
+Karo must move the entire YAML entry to `queue/shogun_to_karo_archive.yaml`.
+
+| Status | In active file? | Action |
+|--------|----------------|--------|
+| pending | YES | Keep |
+| in_progress | YES | Keep |
+| done | NO | Move to archive |
+| cancelled | NO | Move to archive |
+| paused | NO | Move to archive (restore to active when resumed) |
+
+**Canonical statuses (exhaustive list — do NOT invent others)**:
+- `pending` — not started
+- `in_progress` — acknowledged, being worked
+- `done` — complete (covers former "completed", "superseded", "active")
+- `cancelled` — intentionally stopped, will not resume
+- `paused` — stopped by Lord's decision, may resume later
+
+Any other status value (e.g., `completed`, `active`, `superseded`) is
+forbidden. If found during archive, normalize to the canonical set above.
 
 **Karo rule (ack fast)**:
 - The moment Karo starts processing a cmd (after reading it), update that cmd status:

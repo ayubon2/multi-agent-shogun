@@ -25,14 +25,6 @@ SCRIPT_DIR="${__STOP_HOOK_SCRIPT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." &
 # ─── Read stdin (hook input JSON) ───
 INPUT=$(cat)
 
-# ─── Infinite loop prevention ───
-# When stop_hook_active=true, the agent is already continuing from a
-# previous Stop hook block. Allow it to stop this time to prevent loops.
-STOP_HOOK_ACTIVE=$(echo "$INPUT" | python3 -c "import sys,json; print(json.load(sys.stdin).get('stop_hook_active', False))" 2>/dev/null || echo "False")
-if [ "$STOP_HOOK_ACTIVE" = "True" ]; then
-    exit 0
-fi
-
 # ─── Identify agent ───
 if [ -n "${__STOP_HOOK_AGENT_ID+x}" ]; then
     AGENT_ID="$__STOP_HOOK_AGENT_ID"
@@ -44,6 +36,20 @@ fi
 
 # If we can't identify the agent, approve (exit 0 with no output = approve)
 if [ -z "$AGENT_ID" ]; then
+    exit 0
+fi
+
+# ─── Infinite loop prevention ───
+# When stop_hook_active=true, the agent is already continuing from a
+# previous Stop hook block. Allow it to stop this time to prevent loops.
+STOP_HOOK_ACTIVE=$(echo "$INPUT" | python3 -c "import sys,json; print(json.load(sys.stdin).get('stop_hook_active', False))" 2>/dev/null || echo "False")
+if [ "$STOP_HOOK_ACTIVE" = "True" ]; then
+    # Agent is going idle (exit 0) regardless of unread count.
+    # ALWAYS create the idle flag so inbox_watcher knows the agent is idle
+    # and can send nudges. Previously, removing the flag here when unread > 0
+    # caused a deadlock: agent idle but watcher thinks busy → no nudge → stuck.
+    FLAG="${IDLE_FLAG_DIR:-/tmp}/shogun_idle_${AGENT_ID}"
+    touch "$FLAG"
     exit 0
 fi
 
@@ -101,9 +107,12 @@ fi
 # Count unread messages using grep (fast, no python dependency)
 UNREAD_COUNT=$(grep -c 'read: false' "$INBOX" 2>/dev/null || true)
 
+FLAG="${IDLE_FLAG_DIR:-/tmp}/shogun_idle_${AGENT_ID}"
 if [ "${UNREAD_COUNT:-0}" -eq 0 ]; then
+    touch "$FLAG"
     exit 0
 fi
+rm -f "$FLAG"
 
 # ─── Extract unread message summaries ───
 SUMMARY=$(python3 -c "
