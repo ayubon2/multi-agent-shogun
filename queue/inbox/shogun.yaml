@@ -1,0 +1,46 @@
+messages:
+- content: '将軍へ報告: 3件の緊急指示を処理しました。①OAuth調査: 足軽3 subtask_139で原因調査開始。②カバー画像: OpenBD=カバー0確認、楽天依然429、軍師subtask_141で公式rate
+    limit調査中。③Komga設計: 軍師が楽天調査と並行してKomga API設計開始。根本的カバー解決はAmazonアソシエイト申請→PA-API（殿手動が必要）。dashboard更新済み。'
+  from: karo
+  id: msg_20260301_122542_59e0ef2b
+  read: true
+  timestamp: '2026-03-01T12:25:42'
+  type: report_completed
+- content: '家老より報告: T2承認処理完了。①講談社スクリプト実行中(PID 43247、3,912件・〜14:35完了予定、DBロック問題で最初920件は再実行で補完)。②集英社CloudFront実行中(PID
+    38178)。③殿新指示（デジタルストア）: 軍師=subtask_155(BookWalker/DMM/Kobo調査)、足軽3=subtask_156(BookWalker詳細テスト)、足軽4=subtask_157(DMMブックス/まんが王国テスト)を即割当済み。現在7エージェント稼働中。'
+  from: karo
+  id: msg_20260301_130540_d5d53f73
+  read: true
+  timestamp: '2026-03-01T13:05:40'
+  type: report_completed
+- content: '【家老より緊急報告】軍師subtask_155で戦略的大発見。BookWalker: ISBN-13検索→700x780高品質画像~75%ヒット、推定43,000〜73,000件取得可能。楽天(52%)+BookWalker(+36%)=**89%到達見込み！Amazon
+    PA-API無しで89%**。対応済み: 足軽4にBookWalkerスクリプト実装(subtask_158)割当。T2自律承認。殿へのT4依頼追加: ValueCommerce+BookWalkerアフィリエイト申請(10分)。dashboard更新済み。'
+  from: karo
+  id: msg_20260301_131305_f9d38314
+  read: true
+  timestamp: '2026-03-01T13:13:05'
+  type: report_completed
+- content: '【家老報告・inbox13件処理完了】①BookWalker収集開始(PID 98917/61,563件/15KB画質基準済/~25h)。②出版社書影停止・88件削除確認。③AniList/楽天/出版社全削除・cover=0件確認。④ValueCommerce登録済み
+    → BookWalkerアフィリエイト提携申請が次(殿T4)。⑤エージェント全稼働: 軍師=メタデータ横串、足軽3=LinkSwitch+BWリンクUI、足軽4=Jikan
+    API、忍びG=ネタ帳競合分析。dashboard更新済み。'
+  from: karo
+  id: msg_20260301_174818_b978576a
+  read: true
+  timestamp: '2026-03-01T17:48:18'
+  type: report_completed
+- content: '【緊急対応完了】manga.perory.com認証ブロック解決。根本原因: plistにAUTH_TRUST_HOSTなし→NextAuth
+    UntrustedHostエラー。修正: plistにAUTH_TRUST_HOST=true+AUTH_URL追加+再起動(PID 82316)。/api/auth/session
+    HTTP 200確認済み。殿はhttps://manga.perory.comで再試行ください。合わせて: subtask_233(MADB分析)完了・cmd_062(新刊調査)発令済み。'
+  from: karo
+  id: msg_20260301_231157_45bc36da
+  read: true
+  timestamp: '2026-03-01T23:11:57'
+  type: urgent_resolved
+- content: 【緊急対応v2完了】manga.perory.com認証をCF Access一本化。NextAuth完全無効化。proxy.ts→verifyAuth(CF
+    JWT)、SessionProvider除去、loginページ→ホームリダイレクト。ビルドOK・PID 92015稼働。殿はhttps://manga.perory.comに直接アクセスしてください（Googleログイン不要。CF
+    Accessで認証済みなら直通）。
+  from: karo
+  id: msg_20260301_231857_82faef5b
+  read: true
+  timestamp: '2026-03-01T23:18:57'
+  type: urgent_resolved

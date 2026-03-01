@@ -189,3 +189,4 @@
 !.github/
 !.github/workflows/
 !.github/workflows/*.yml
+projects/madb-dataset/

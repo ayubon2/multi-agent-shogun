@@ -1,0 +1,1661 @@
+commands:
+- id: cmd_014
+  timestamp: '2026-02-24T09:00:00+09:00'
+  purpose: 漫画マッチング検証システムの設計書が完成し、実装着手可能な状態になっている
+  acceptance_criteria:
+  - context/sakusen_005.md に設計書が記載されている
+  - 未マッチ作品のカテゴリ分け方式（作者違い・副題有無・表記揺れ・版違い）が定義されている
+  - 対比テーブルのDB設計（スキーマ）が含まれている
+  - チェックサイトのUI/UXワイヤーフレーム（テキスト形式）が含まれている
+  - 技術スタック選定（Next.js? 別アプリ?）が記載されている
+  command: '作戦005「検証」— 漫画マッチング検証システム設計。
+
+    軍師主導で設計。忍びリサーチ結果（queue/reports/）も参照。
+
+
+    殿の方針（Memory MCP lord_preferences 参照）:
+
+    - ディスク内 = ground truth、公式表示 = メディア芸術DB / Amazon
+
+    - 未マッチは人手チェック（対比テーブル蓄積、二度と間違えない仕組み）
+
+    - チェックサイト構想: 名前一致判定WebUI、将来クラウドソーシング
+
+    - 3名一致で正と判断するロジック
+
+
+    設計に含めるべき内容:
+
+    1. 未マッチ作品の自動カテゴリ分けアルゴリズム
+
+    2. 対比テーブル（mapping table）のDB設計
+
+    3. チェックサイトUI/UX（殿が空き時間にサクサク判定できるUI）
+
+    4. 将来のクラウドソーシング対応設計（3名投票、CrowdWorks連携）
+
+    5. 002_manga-systemとの統合方式
+
+    6. 技術スタック選定
+
+    '
+  project: manga_system
+  priority: high
+  status: in_progress
+  approved_by: shogun
+  approved_at: "2026-02-28T19:02:00"
+  approval_note: "殿が方式Eを承認。実装開始可。"
+  design_completed_at: "2026-02-28T11:12:00"
+  design_note: "設計書完成。推奨方式E（009デザイン移植+段階的共有）。Phase 0-3 context/sakusen_046_design.md参照。"
+  phase1_completed_at: "2026-02-28T19:40:00"
+  phase1_note: "P1完了: 147グループ/295件グルーピング。QC PASS(20/20,精度99.3%)。偽陽性1件(八犬伝:同名異作)→Phase2で著者比較追加。"
+- id: cmd_015
+  timestamp: '2026-02-24T09:00:00+09:00'
+  purpose: 汎用マルチサイトスクレイピングシステムの設計書が完成し、実装着手可能な状態になっている
+  acceptance_criteria:
+  - context/sakusen_006.md に設計書が記載されている
+  - プラグイン/アダプター方式のアーキテクチャが定義されている
+  - 13dlの既存実装との統合方針が明記されている
+  - bszip対応のアダプター設計例が含まれている
+  - 不足巻検出 → DL → 解凍 → リネーム → チェック のパイプライン設計が含まれている
+  command: '作戦006「収集」— 汎用マルチサイトスクレイピングシステム設計。
+
+    軍師主導で設計。忍びGリサーチ結果（queue/reports/）も参照。
+
+
+    殿の方針（Memory MCP lord_preferences 参照）:
+
+    - 13dl型設計を他サイトに拡張可能な汎用設計
+
+    - 全ページスクレイピング基本
+
+    - 不足巻・新刊検出 → DLリンク名から巻数予測 → プレミアリンクでDL
+
+
+    設計に含めるべき内容:
+
+    1. アダプターパターンのアーキテクチャ（サイトごとにアダプター追加）
+
+    2. 13dl既存コードの分析と統合方針
+
+    3. bszipアダプターの設計例
+
+    4. パイプライン: スクレイプ → パース → 巻数予測 → DLリンク選定 → DL → 解凍 → リネーム → チェック
+
+    5. 002_manga-systemとの統合方式（DBへの登録フロー）
+
+    6. レート制限・エラーハンドリング設計
+
+    '
+  project: manga_system
+  priority: medium
+  status: pending
+- id: cmd_018
+  timestamp: '2026-02-25T08:30:00+09:00'
+  purpose: 008/009に外部認証（Google OAuth等）が導入され、008は招待制アクセス、009は認証付き公開となる
+  acceptance_criteria:
+  - Google OAuth（または同等の外部認証）でログイン可能
+  - '008: 殿が許可したユーザーのみアクセス可能（招待制）'
+  - '008: 未認証ユーザーはコンテンツにアクセスできない'
+  - '009: 認証フローが動作する'
+  - 既存のCloudflare Access JWT認証との整合性が取れている
+  - アカウント承認フロー（招待コード、証明書発行、管理者承認等）の設計書がある
+  - 両サイトで npm run build 成功
+  command: "殿からの直接指示: 認証システム導入。\n\n== 要件 ==\n1. 外部認証プロバイダ（Google OAuth等）を使う。自前の認証基盤は持たない。\n\
+    2. 008_manga-server（プライベート漫画サーバー）:\n   - 殿が許可した人のみアクセス可能\n   - 招待制。勝手にアカウントを作れてはいけない\n\
+    \   - 方式は最善案を提案せよ（招待コード、証明書発行、管理者承認、allowlist等）\n3. 009_manga-discover（パブリックディスカバリー）:\n\
+    \   - こちらも認証を入れる\n   - 008ほど厳しくなくてよいが、認証は必要\n\n== 進め方 ==\nPhase 1: 軍師に設計を依頼（認証方式の比較検討、Next.js\
+    \ + OAuth実装パターン）\n  - Cloudflare Access（既存）との併用/置換の判断\n  - NextAuth.js vs Clerk\
+    \ vs Auth.js vs Cloudflare Access のみ\n  - 招待制の実装パターン（allowlist, invitation code,\
+    \ admin approval）\n  - 009のアクセスレベル設計\nPhase 2: 設計承認後、足軽が実装\n\n== 既存認証状況 ==\n-\
+    \ Cloudflare Access JWT認証が008に実装済み（cmd_004で導入）\n- src/lib/auth.ts にJWT検証ロジックあり\n\
+    - aud検証によるアクセス制御\n\n対象リポ:\n  ~/projects/008_manga-server\n  ~/projects/009_manga-discover\n"
+  project: manga_ecosystem
+  priority: high
+  status: in_progress
+  impl_completed_at: "2026-02-28T20:45:00"
+  impl_note: "next-auth v5 beta.30実装完了。ビルドOK。proxy.ts統合・DEV_MODE対応済み。pending: ALLOWED_EMAILS設定+DEV_MODE無効化（殿の操作待ち）"
+- id: cmd_021
+  timestamp: '2026-02-25T08:30:00+09:00'
+  purpose: 受賞記録等のコンテンツ戦略が策定され、初期データ収集が開始される
+  acceptance_criteria:
+  - 収集すべきコンテンツ種別の一覧と優先度が提案されている
+  - 各コンテンツの入手可能なソース（API、スクレイピング、手動等）が調査されている
+  - 受賞記録の具体的な収集計画（対象賞、データソース、件数見込み）がある
+  - DB設計（テーブル追加案）が提案されている
+  - 殿の承認を得るための提案書がダッシュボードに上がっている
+  command: "殿からの指示: 「各種受賞記録とかもまだまだ集まっていない。コンテンツ類の検討や収集、実装などもみんなで議論して提案してほしい」\n\n==\
+    \ 議論・提案すべき内容 ==\n1. コンテンツ種別の洗い出しと優先度付け:\n   - 受賞記録（手塚治虫文化賞、講談社漫画賞、小学館漫画賞、このマンガがすごい!等）\n\
+    \   - 売上・発行部数データ\n   - アニメ化情報（アニメ化済み/予定）\n   - 実写化情報\n   - ユーザーレビュー/評価（AniList,\
+    \ MAL, BookWalker等）\n   - 作者情報の充実（経歴、他作品）\n   - 出版社・レーベル情報\n   - 連載誌情報\n2. 各データソースの調査:\n\
+    \   - API提供あり → 自動収集可能\n   - スクレイピング必要 → 工数見積もり\n   - 手動入力必要 → 優先度下げ\n3. DB設計提案（新テーブル\
+    \ or 既存テーブル拡張）\n4. 009_manga-discoverへの表示方法提案\n5. 収集の実現可能性と工数の見積もり\n\n== 進め方 ==\n\
+    軍師に戦略設計を依頼。忍びに外部ソース調査を依頼。\n提案書をダッシュボード\U0001F6A8要対応に上げ、殿に承認を求める。\n\n対象リポ:\n  ~/projects/002_manga-system\n\
+    \  ~/projects/009_manga-discover\n"
+  project: manga_ecosystem
+  priority: high
+  status: complete
+  completed_at: "2026-02-25T18:00:00+09:00"
+  completion_note: "設計書sakusen_021_content_strategy.md完成。コンテンツ優先度マップ・データソース調査（MADB/AniList/楽天等）・DB設計提案完了。実装は将来作戦候補に移行。"
+- id: cmd_024
+  timestamp: '2026-02-25T09:15:00+09:00'
+  purpose: 漫画情報の定期収集・分析パイプラインの設計が完成し、レコメンド観点の網羅的リストが策定される
+  acceptance_criteria:
+  - レコメンドに活用可能な観点が最低30個以上リストアップされている
+  - 各観点に対する情報ソース（API/RSS/スクレイピング/手動）が特定されている
+  - 定期収集パイプラインのアーキテクチャ設計図がある
+  - 過去データの遡及収集計画がある
+  - 新刊情報・メディア化・受賞等のリアルタイム収集方式が設計されている
+  - 収集データ → レコメンドへの変換ロジック（どう推薦に活かすか）が説明されている
+  - 提案書がダッシュボード🚨要対応に上がっている
+  command: "殿からの直接指示（最重要構想）:\n「漫画情報を定期的に収集して行く仕組みづくりが必要。新刊情報やニュースを\n収集し続けることで、そこを起点としたレコメンドもある。映画になった、とか。\n\
+    過去についても調べる必要がある。レコメンドするべき観点をできるだけ多く上げて、\n必要な情報を定期的に収集、分析する仕組みを作る必要がある。」\n\n==\
+    \ これは漫画エコシステムの中核インフラである ==\n\n単なるデータ収集ではない。「何を理由に漫画をレコメンドするか」の\n観点を網羅的に洗い出し、それぞれに必要な情報を継続的に集める\n\
+    パイプラインを設計する。\n\n== Phase 1: レコメンド観点の網羅的洗い出し ==\n\n以下は出発点。軍師・忍びで徹底的に拡張せよ。\n\n【イベント起点のレコメンド】\n\
+    - 「この作品が映画化/実写化された」→ 原作レコメンド\n- 「この作品がアニメ化された/新シーズン発表」→ 原作レコメンド\n- 「この作者の新作が出た」→\
+    \ 過去作レコメンド\n- 「この作品が受賞した」→ 受賞作レコメンド\n- 「この作品が完結した」→ まとめ読みレコメンド\n- 「このジャンルが今話題」→\
+    \ トレンドレコメンド\n\n【属性起点のレコメンド】\n- 同じ作者の他作品\n- 同じ雑誌/レーベルの作品\n- 同じタグ/ジャンルの作品\n- 類似レーダーチャートの作品（既存）\n\
+    - 同じ時代の作品\n- 同じ出版社の作品\n\n【評価起点のレコメンド】\n- 高評価作品（MAL, AniList, BookWalker）\n- 発行部数ランキング上位\n\
+    - 受賞歴のある作品\n- 「このマンガがすごい!」ランクイン\n\n【ユーザー起点のレコメンド】（将来）\n- 閲覧履歴ベース\n- お気に入りリストベース\n\
+    - 「この作品を読んだ人はこれも読んでいる」\n\n【季節/文脈起点のレコメンド】\n- 夏に読みたい漫画、冬に読みたい漫画\n- 旅行先の舞台の漫画\n\
+    - 映画公開に合わせた原作\n- 記念日（作品連載開始○周年）\n\n== Phase 2: 情報ソースの特定と収集方式設計 ==\n\n各観点に対し:\n\
+    1. どこから情報を得るか（API, RSS, スクレイピング, 手動）\n2. 収集頻度（リアルタイム, 日次, 週次, 月次）\n3. データ格納方式（既存DBへの追加テーブル\
+    \ or 新DB）\n4. 過去データの遡及方法\n\n情報ソース候補:\n- メディア芸術データベース（文化庁）\n- AniList API / MAL\
+    \ API\n- 出版科学研究所\n- natalie.mu（漫画ニュース）\n- コミックナタリー RSS\n- Amazon Product API\n\
+    - Wikipedia API\n- BookWalker\n- 各出版社の新刊情報ページ\n- X(Twitter) トレンド\n\n== Phase 3:\
+    \ パイプラインアーキテクチャ設計 ==\n\ncronジョブ or launchd で定期実行する収集・分析パイプライン:\n```\n収集 → パース\
+    \ → 正規化 → DB格納 → 分析 → レコメンド生成\n```\n\n== 進め方 ==\n1. 軍師: 全体設計・レコメンド観点の構造化\n2. 忍び:\
+    \ 外部情報ソースの網羅的調査（API有無、RSS有無、スクレイピング可否）\n3. 足軽: 設計書作成・提案書整理\n4. 提案書をダッシュボード\U0001F6A8\
+    要対応に上げ、殿に提出\n\n== 注意 ==\n- cmd_021（コンテンツ戦略）と連携するが、本cmdはより広い\n  「情報収集インフラ」の設計に焦点を置く\n\
+    - 実装は次フェーズ。今回は設計と提案まで\n\n対象リポ:\n  ~/projects/002_manga-system\n  ~/projects/009_manga-discover\n"
+  project: manga_ecosystem
+  priority: critical
+  status: complete
+  completed_at: "2026-02-25T20:00:00+09:00"
+  completion_note: "設計書sakusen_024_pipeline.md完成。レコメンド観点37件・情報ソース特定・パイプラインアーキテクチャ設計完了。実装は後続cmdへ。"
+- id: cmd_027
+  timestamp: '2026-02-26T09:00:00+09:00'
+  purpose: 進行中の全cmdが再開され、足軽・忍び・軍師が全稼働し、殿が止まらない開発を実感できる状態になる
+  acceptance_criteria:
+  - cmd_018 P4（閲覧履歴API+/mypage）が実装完了し、ビルド成功
+  - cmd_025（popularity_score）がDB実装・デフォルトソート変更完了
+  - cmd_026（デザインリニューアル）のモックアップ5案が殿に提出される
+  - cmd_020（ユニーク作品数）の分析結果レポートが完成
+  - cmd_021/024の残タスク（コンテンツ戦略+パイプライン実装）が進行
+  - 忍びが外部Web調査を並行実施（デザインリファレンス収集、競合分析深堀り等）
+  command: "全軍再始動。前セッションで中断した作業を一斉再開せよ。\n\n== 殿の方針 ==\n- 止まらないこと。足軽を空かせるな。\n- 再帰的に良くしていく。完了→即改善→即次タスク。\n\
+    - 忍びを積極活用。外部Web情報で分析の質を上げよ。\n\n== 再開すべき作業（優先度順） ==\n\n1. cmd_025: popularity_score\
+    \ DB列追加+Python計算+デフォルトソート変更\n   → 足軽に実装再開させよ\n\n2. cmd_018 P4: 閲覧履歴API + /mypage\n\
+    \   → 足軽に実装再開させよ\n\n3. cmd_026: 009デザインリニューアル\n   → 忍びC/Gにデザインリファレンス追加調査させつつ、足軽にモックアップ作成させよ\n\
+    \n4. cmd_020: ユニーク作品数分析\n   → 足軽に分析再開させよ。忍びに外部DB（MAL/AniList）の作品総数調査を並行\n\n5.\
+    \ cmd_021/024: コンテンツ戦略+パイプライン\n   → 軍師に残タスクの棚卸しと次ステップ設計を依頼\n\n6. cmd_010 Phase2:\
+    \ chrome-ai-bridge残修正\n   → 余力があれば着手\n\n== 忍び活用指針 ==\n- 忍びC（ChatGPT）: デザイントレンド調査、UX改善提案\n\
+    - 忍びG（Gemini）: 競合サイト分析、技術リファレンス調査\n- 調査結果は queue/reports/ に格納し、足軽の実装に活かせ\n\n==\
+    \ 注意 ==\n- 全足軽（5名）+ 忍び（2名）+ 軍師 をフル稼働させよ\n- 完了したものから即次タスクを割り振れ。将軍の指示を待つな（家老裁量で分配可）\n\
+    - 【追加指示 09:50】殿外出中。忍びC/Gへのchrome-ai-bridge問い合わせは停止。\n  忍びも足軽と同様に実装タスクを割り振れ。実質7名体制で回せ。\n"
+  project: manga_ecosystem
+  priority: critical
+  status: complete
+  completed_at: "2026-02-26T23:59:00+09:00"
+  completion_note: "全軍再始動・009全13ページ実装完了。QC Round4 PASS。SEO/PWA/ダークモード実装済み。sakusen_027_final.md記録済み。"
+- id: cmd_028
+  timestamp: '2026-02-26T09:30:00+09:00'
+  purpose: デザイン5案を実際のページとして比較閲覧でき、殿が見て選べる状態になる
+  acceptance_criteria:
+  - 009_manga-discover 上に /design-preview のトップページが存在する
+  - トップページから5案それぞれのプレビューページにリンクで遷移できる
+  - 各プレビューページは実際のデータ（118K works）を使い、トップページ相当の見た目を再現している
+  - 案ごとのカラーパレット・レイアウトの違いが一目でわかる
+  - npm run build 成功、localhost:3002 でアクセス可能
+  command: "殿からの直接指示: デザインモックアップ5案を比較できるプレビューページを作れ。\n\n== 要件 ==\n1. トップページ（/design-preview）を1つ作る\n\
+    \   - 5案の一覧（案名、特徴の簡潔な説明）\n   - 各案へのリンク\n2. 各案のプレビューページ（/design-preview/a, /b,\
+    \ /c, /d, /e）\n   - 実際のトップページをその案のデザイン（カラーパレット・レイアウト）で再現\n   - 実データ（discover.db）を使って本物感を出す\n\
+    3. 殿がブラウザで見て「これがいい」と選べる状態にする\n\n== 参照 ==\n- context/sakusen_026_mockups.md — 5案の定義\n\
+    - context/design_chatgpt_research.md — 忍びCのカラーパレット調査\n\n== 注意 ==\n- 本番のトップページ（/）は変更しない。あくまで\
+    \ /design-preview 以下にプレビュー用ページを追加\n- 家老推奨: 案E（Bento Grid + Teal）だが、殿が実際に見て判断する\n\
+    \n対象リポ: ~/projects/009_manga-discover\n"
+  project: manga_ecosystem
+  priority: high
+  status: complete
+  completed_at: "2026-02-26T23:59:00+09:00"
+  completion_note: "/design-preview + 5案（/a〜/e）プレビューページ実装完了。実データ(118K works)使用。殿による案選定待ち（cmd_026として継続）。"
+- id: cmd_029
+  timestamp: '2026-02-26T09:45:00+09:00'
+  purpose: chrome-ai-bridgeのmcpRelayUrlエラーが解消され、忍びがchrome-ai-bridge MCP経由でChatGPT/Geminiに正常接続できる
+  acceptance_criteria:
+  - Select Tab画面でmcpRelayUrlエラーが表示されない
+  - mcpRelayUrlの設定箇所・伝播経路が特定され、正しく設定されている
+  - MCP serverの起動状態確認ができる
+  - 忍びC/Gからchrome-ai-bridgeのツール（ask_chatgpt_web, ask_gemini_web）が正常実行できる
+  - 修正内容がコミットされている
+  command: "殿からの緊急報告: chrome-ai-bridgeで「Missing mcpRelayUrl parameter. Make sure the\
+    \ MCP server is running.」エラー発生。\n\n== エラー状況 ==\n- chrome-ai-bridgeの「Select Tab」画面でmcpRelayUrlパラメータが見つからないエラー\n\
+    - MCP serverが起動していない、またはmcpRelayUrlの設定が正しく渡されていない\n\n== 調査・修正手順 ==\n★ 軍師に先行分析させよ。005のコードベースを深く読む必要がある。\n\
+    \nPhase 1: 軍師がコード分析\n  1. mcpRelayUrlの設定箇所を特定（config、env、CLI引数のどれか）\n  2. mcpRelayUrlパラメータのバリデーション箇所・エラー発生箇所を特定\n\
+    \  3. MCP serverの起動プロセスとmcpRelayUrlの伝播経路を分析\n  4. 修正設計をreport YAMLで提出\n\nPhase\
+    \ 2: 足軽が実装\n  1. mcpRelayUrlが正しく設定・伝播されるよう修正\n  2. MCP serverの起動プロセスの問題を修正\n \
+    \ 3. 設定ファイルのテンプレートや.envに適切なデフォルト値を追加（必要なら）\n  4. 動作確認手順をREADMEまたはコメントに記載\n\n==\
+    \ 重要 ==\n- これが動かないと忍びが使えない → 全軍の調査能力が半減\n- cmd_023で既にDEBUGログ修正済み。今回は別の問題\n- 過去の知見:\
+    \ cleanup_bridge.sh、ゾンビnodeプロセス問題（cmd_010）\n\n対象リポ: ~/projects/005_chrome-ai-bridge\n"
+  project: chrome_ai_bridge
+  priority: critical
+  status: in_progress
+  shogun_note: '将軍誤判定を撤回。殿の指摘と方針:
+
+    (1) ブラウザ再起動が必要になること自体がおかしい
+
+    (2) 再起動後にMCPがdisableになる理由が不明
+
+    (3) 手動介入なしで安定稼働すべき。全てプログラム側で制御
+
+    (4) 3日修正しても安定しない。パッチの積み重ねでは根本解決しない
+
+    (5) 殿の判断: 必要なら同等機能をゼロから作り直し、新アプリとしてGitHubに公開してよい
+
+
+    軍師への指示:
+
+    - まず005の根本的な設計欠陥を分析せよ
+
+    - 「修正で直るレベル」か「設計が腐っている」かを判定せよ
+
+    - 後者なら、ゼロベース再構築の設計案を出せ（新リポ、クリーンなアーキテクチャ）
+
+    - 判定結果と推奨案をreport YAMLで提出
+
+    '
+- id: cmd_030
+  timestamp: '2026-02-26T10:15:00+09:00'
+  purpose: 009のトップページが明るく魅力的なデザインになり、漫画の多彩な探し方が入口として並ぶ
+  acceptance_criteria:
+  - ダークネイビーの暗い配色が一掃され、明るい配色になっている
+  - 参考サイトの色味が反映されている（syo-ei.com=清潔感、gcs-tc-school.com=明るいオレンジ系アクセント）
+  - トップページに漫画リスト（作品一覧）が表示されない
+  - トップページに漫画の『探し方』が複数の入口として並んでいる（ジャンル別、受賞作、人気作、新着、著者別、レーダー分析、タグ等）
+  - 各探し方の入口から対応するページに遷移できる
+  - npm run build 成功、localhost:3002 でアクセス可能
+  command: "殿からの直接フィードバック（最優先で対応せよ）:\n\n== 殿の指摘（原文要約） ==\n1. 参考サイト（syo-ei.com のオレンジ系等）の色味が全然反映されていない\n\
+    2. トップページに漫画リストは不要\n3. 漫画の「探し方」の入口がいろいろある形がいい（ジャンルも一つの切り口）\n4. まず今の暗い感じを改善したい\
+    \ ← 最優先\n\n== 対応方針 ==\n\nPhase 1: 暗い配色を即改善（最優先・これだけで見違える）\n  - globals.css のCSS変数を明るい配色に全面変更\n\
+    \  - 白ベース背景 + オレンジ系アクセント（gcs-tc-school.com参考）\n  - ナビ、カード、ボタン全て明るく\n  - 参考: design_references.md\
+    \ の推奨デザイン方針を忠実に\n\nPhase 2: トップページを「探し方ポータル」に再構築\n  - 漫画リスト（作品一覧）をトップから撤去\n  -\
+    \ 代わりに「探し方カード」を配置:\n    ┌────────────┬────────────┬────────────┐\n    │ \U0001F3AD\
+    \ ジャンル │ \U0001F3C6 受賞作  │ \U0001F525 人気作  │\n    │  で探す    │  で探す    │  で探す \
+    \   │\n    ├────────────┼────────────┼────────────┤\n    │ \U0001F195 新着    │\
+    \ ✍️ 著者    │ \U0001F4CA レーダー │\n    │  で探す    │  で探す    │  で分析    │\n    ├────────────┼────────────┼────────────┤\n\
+    \    │ \U0001F3F7️ タグ    │ \U0001F4DA シリーズ │ \U0001F3B2 ランダム │\n    │  で探す   \
+    \ │  で探す    │  で出会う   │\n    └────────────┴────────────┴────────────┘\n  - 各カードは対応するページ（/works?sort=popular,\
+    \ /tags, /popular 等）にリンク\n  - カードにはアイコン、簡潔な説明、作品数等を表示\n\n== 参考サイトの要素を必ず取り入れよ ==\n\
+    - syo-ei.com: カード配置の余白感、清潔感、モダン\n- gcs-tc-school.com: 明るく親しみやすい色味、オレンジ系アクセント\n\
+    - 丸ゴシック系フォント（M PLUS Rounded 1c or Quicksand）\n\n== 注意 ==\n- cmd_028のプレビューページは別途そのまま進めてよい\n\
+    - 本cmdは本番の / を直接改善する\n- 既存の /works, /popular, /tags 等のページは温存\n\n対象リポ: ~/projects/009_manga-discover\n"
+  project: manga_ecosystem
+  priority: critical
+  status: pending
+- id: cmd_031
+  timestamp: '2026-02-26T23:00:00+09:00'
+  north_star: 009を『使いたくなる漫画発見サイト』に進化させる。量ではなく体験の質で差別化し、漫画賞横断検索×AIレコメンドの唯一のサイトを作る
+  purpose: 現行 /ja のページ構成をベースに、競合サイトを参考にしたデザイン改善提案が複数出され、殿が見て判断できる状態になる
+  acceptance_criteria:
+  - 競合サイト5つ以上の構成・デザイン分析レポートが作成されている
+  - 各競合の『これは取り入れるべき』要素が具体的にリストアップされている
+  - 009の各ページ（トップ、作品一覧、作品詳細、ランキング、受賞、タグ）への改善案が提案されている
+  - 改善案は実際にコードに反映され、localhost:3002/ja で確認可能
+  - やぼったさの原因（余白、フォント、色の使い方、カード設計、アニメーション等）が特定され改善されている
+  - npm run build 成功
+  command: '殿の直接指示:
+
+    「localhost/jaのデザインが一番いい（構成はこれがベース）」
+
+    「今のサイトはやぼったすぎる」
+
+    「競合サイトの構成も参考にしながらみんなから案を修正してもらいたい」
+
+    「サイト構成はまだまだ変えていく」
+
+
+    == 方針 ==
+
+    現行 /ja のページ構成（ポータル型トップ+各探索ページ）は維持。
+
+    デザインの洗練度を上げる。「やぼったい」を「洗練された」に変える。
+
+    これは1回で完成ではなく、継続的に改善していくイテレーション。
+
+
+    == Phase 1: 競合分析（軍師 + 足軽で分担） ==
+
+    以下の競合サイトを実際にアクセスし、構成・デザイン・UXを分析:
+
+
+    【必須分析対象】
+
+    1. alu.jp — 国内先行メディア。コマ投稿、ABJマーク、LINE連携
+
+    2. AniList (anilist.co) — ミニマルグリッド、スコア表示、プロフィール
+
+    3. BookWalker (bookwalker.jp) — バッジシステム、カテゴリナビ
+
+    4. anime.ameo.dev (Sprout) — 2Dアトラス可視化、ニューラルレコメンド
+
+    5. natalie.mu/comic — ニュースレイアウト、画像の使い方
+
+
+    【追加参考（余力があれば）】
+
+    6. mangadex.org — フィルタリングUI、多言語対応
+
+    7. piccoma.com — モジュールスタッキング、モバイルファースト
+
+    8. syo-ei.com — カード余白感、清潔感
+
+    9. gcs-tc-school.com — 明るいオレンジ系色味
+
+
+    各サイトについて:
+
+    - トップページの構成（何をどう並べているか）
+
+    - ナビゲーション設計
+
+    - カードUIのデザイン（余白、角丸、影、ホバーエフェクト）
+
+    - 色の使い方（背景、アクセント、テキスト）
+
+    - フォントの雰囲気
+
+    - 「洗練されている」と感じるポイントは何か
+
+
+    == Phase 2: やぼったさの原因特定と改善 ==
+
+    現行009のどこがやぼったいかを具体的に列挙し、改善:
+
+
+    考えられる原因（仮説）:
+
+    - 余白が足りない or 多すぎる
+
+    - フォントが汎用的すぎる（デフォルトsans-serif感）
+
+    - カードの影・角丸・ホバーが標準shadcn/uiのまま
+
+    - 色の使い方がフラット（グラデーション・アクセントが弱い）
+
+    - アニメーション・トランジションがない
+
+    - 画像がない（テキストだけの寂しさ） ← OpenBD統合で解消予定
+
+    - アイコン・イラストの不足
+
+
+    改善は小さな単位で実装し、殿に都度確認してもらう。
+
+    一気にやって殿の好みと違ったら手戻りが大きい。
+
+
+    == Phase 3: 繰り返し改善 ==
+
+    殿のフィードバックを受けて修正 → 再提出 → 修正のサイクル。
+
+    このcmdは「1回目の提案と実装」までがスコープ。
+
+
+    == 重要 ==
+
+    - /design-preview の5案は参考程度。本番の / を直接改善する
+
+    - 構成（ページの種類・導線）は変えない。見た目を変える
+
+    - ただし競合分析で「この構成要素は追加すべき」と判断したら提案してよい
+
+    - cmd_028のプレビューページは削除してよい（不要になった）
+
+
+    対象リポ: ~/projects/009_manga-discover
+
+    '
+  project: manga_ecosystem
+  priority: critical
+  status: pending
+- id: cmd_032
+  timestamp: '2026-02-26T23:10:00+09:00'
+  north_star: データの質がサイトの質を決める。書影・あらすじ・スコアが揃えば、デザイン改善の効果も倍増する
+  purpose: OpenBD書誌データ（書影・あらすじ）とAniList全件スコアが002のDBに統合され、009に同期される
+  acceptance_criteria:
+  - OpenBD APIから118K作品のISBNでバッチ取得し、書影URL・あらすじがmanga_v2.dbに格納されている
+  - 取得成功率と失敗パターンがレポートされている
+  - AniList収集が自動化され、夜間バッチで継続収集する仕組みが稼働している
+  - sync_to_discover.shが書影・あらすじカラムにも対応し、discover.dbに同期済み
+  - 009の作品ページで書影が表示される（画像がある作品のみ）
+  - 009の作品一覧でもサムネイル書影が表示される
+  command: '殿承認済み: OpenBD + AniList データ収集。cmd_031と並行で進めよ。
+
+
+    == Task A: OpenBD統合（最優先） ==
+
+    - API: https://api.openbd.jp/v1/get?isbn=ISBN（認証不要、無料、1000件バッチ可）
+
+    - manga_v2.db に cover_url, summary, publisher, publish_date カラム追加
+
+    - collect_openbd.py 作成 → バッチ取得
+
+    - sync_to_discover.sh 拡張 → 009に同期
+
+    - 009 UI: 書影表示（next/image最適化）
+
+
+    == Task B: AniList全件収集自動化 ==
+
+    - collect-anilist.py 改善（30 req/min、中断再開、backoff）
+
+    - launchd 夜間バッチ → 自動収集
+
+    - discover.db同期
+
+
+    == Task C: 自動同期ジョブ ==
+
+    - com.perory.manga-sync launchd → 毎日sync_to_discover.sh
+
+
+    == 重要: OpenBD書影の制約（殿からの情報 2026-02-27） ==
+
+    2023年6月以降、JPROからopenBDへのデータ配信が停止。
+
+    書影は版元ドットコム会員社（約500社）のみ。全体的に縮小。
+
+    → 118K全作品の書影は取れない前提で進めよ。
+
+    → batch1で実際のヒット率（書影あり/なし）を必ず計測・レポートせよ。
+
+    → あらすじ・書誌情報は取れる可能性あり。書影だけに期待するな。
+
+    → 書影の代替候補: 楽天ブックスAPI、Amazon PA-API、国会図書館
+
+    → 複数ソースからの書影取得を設計せよ（OpenBDになければ楽天、等のフォールバック）
+
+
+    == 注意 ==
+
+    - Task Aは書影だけでなく書誌情報全体の充実が目的
+
+    - バッチ処理プロトコル準拠（batch1 QC必須）
+
+    - AniListは外国サイトのため、タグ・スコアの日本漫画への適合度を確認すること
+
+
+    対象: ~/projects/002_manga-system, ~/projects/009_manga-discover
+
+    '
+  project: manga_ecosystem
+  priority: critical
+  status: pending
+  lord_feedback_raw: '殿が実際に触った生フィードバック（2026-02-26 23:30）:
+
+
+    1. 操作感がとても悪い。直感的じゃない。
+
+    2. ライブサーチがほしい。検索窓に打つと候補がリアルタイムで出る形。
+
+    3. 条件を絞ると対象数が動的に変わるべき（ファセット検索）。数字が遷移で見えない。
+
+    4. Enterを押さないと反映しない箇所がある。即時反映すべき。
+
+    5. alu.jpの「5つの好きな漫画を登録して」→ 検索→候補表示→選択、のフローがわかりやすかった。
+
+    6. UXの最大化が全く考えられていない。
+
+    7. 類似サイトをソースコードレベルで分析し、UXパターンをデータベースに蓄積せよ。
+
+    8. 採用できる仕組みをどんどん採用すべき。
+
+    '
+- id: cmd_033
+  timestamp: '2026-02-26T23:30:00+09:00'
+  north_star: 『何を作るか』を決めずに作り続けても迷子になる。全軍が同じゴールを見て走るための羅針盤を作れ
+  purpose: 009のビジョン・ローンチ計画・機能ロードマップが、将軍/家老/軍師の三者議論を経て一枚の戦略文書にまとまる
+  acceptance_criteria:
+  - context/vision_009.md が作成され、以下が全て含まれている
+  - 1. サイトのアイデンティティ（何者で、誰のためで、何が唯一無二か）
+  - '2. ローンチ要件（MVP定義: これが揃ったら公開する、の最小セット）'
+  - 3. ユーザー登録・認証の設計方針（いつ、どの方式で、何が登録で可能になるか）
+  - 4. フェーズ別ロードマップ（Pre-Launch → Launch → Post-Launch）
+  - 5. 各フェーズの具体的な機能リストと優先順位
+  - 6. ローンチ先（どこで告知し、最初のユーザーをどう獲得するか）
+  - 7. 成功指標（何をもって成功とするか）
+  - 軍師のreport YAMLに戦略分析が含まれている
+  - 家老のreport YAMLに実現可能性・工数見積もりが含まれている
+  - 将軍所見が文書に統合されている
+  - 殿に提出可能な状態（ダッシュボード🚨要対応に掲載）
+  command: "【最重要】殿からの叱責を受けての議論セッション002。\ncmd_031/032は並行で進めてよいが、本cmdが全ての上位に立つ。\n\n\
+    殿の指摘（原文要約）:\n「家老と軍師と将軍で議論して、もっと深掘りしてよ。\n この漫画サイト、どこを目指していくのか。\n どこでローンチして、その後どういう機能拡張するのか。\n\
+    \ ユーザごとに漫画を紹介するって言って、ユーザ登録の仕組みもないじゃん？」\n\n== 議論の構造 ==\n\nPhase 1: 軍師が戦略分析を提出（report\
+    \ YAML）\n  以下の問いに答えよ:\n  Q1. 009は何者か？ 一言で言え。（「〇〇のための〇〇サイト」）\n  Q2. 競合と比較して、009でしかできないことは何か？（Deep\
+    \ Research参照）\n  Q3. 最初のユーザーは誰か？（ペルソナ: 年齢、漫画歴、何を求めてくるか）\n  Q4. ユーザーが「また来たい」と思う理由は何か？\n\
+    \  Q5. ユーザー登録で何が変わるべきか？（登録前/後の体験の違い）\n  Q6. MVPに含めるべき機能と、含めないべき機能の線引き\n  Q7. ローンチ先の候補と各チャネルの特性\n\
+    \  Q8. 成功の定義（1ヶ月後、3ヶ月後、1年後）\n\nPhase 2: 家老が実現可能性を評価（report YAML）\n  軍師の戦略分析を受けて:\n\
+    \  - 各機能の工数見積もり\n  - ユーザー認証の技術選定（Auth.js? Clerk? Supabase Auth?）\n  - ローンチまでに必要な技術的タスク一覧\n\
+    \  - 現状の009から何を削り、何を追加すべきか\n  - リスク（法的、技術的、運用的）\n\nPhase 3: 将軍が統合し vision_009.md\
+    \ を完成\n  軍師と家老の分析を統合し、殿に提出可能な文書にまとめる。\n\n== 議論で考慮すべき材料 ==\n\n1. Deep Research（context/gemini_deep_research_manga_platform.md）\n\
+    \   - 市場: 6,703億円、推奨の質がリテンション核心\n   - 競合: alu.jp, Bangumi, Sprout, Teemii, Mantium\n\
+    \   - 技術: LLMセマンティック検索、グラフ埋め込み、OpenBD\n   - 法的: 書影利用、ABJマーク、ネタバレ判決\n\n2. 議論001の未解決問い\n\
+    \   - 「118Kは量の武器か質の負債か」\n   - 「城は建った、民はまだ来ておらぬ」\n   - OpenBD統合の優先度\n\n3. 殿のこれまでの方針（Memory\
+    \ MCP）\n   - ディスク内=ground truth\n   - 情報源の明示を重視\n   - 定期収集パイプライン構築を重視\n   - API追加より人間判断の蓄積を優先\n\
+    \n4. 現在の矛盾\n   - パーソナライズを語るがユーザー登録なし\n   - GA4もなくユーザー行動が見えない\n   - 118K作品があるがスコアは3%のみ\n\
+    \   - デザインが洗練されていない\n\n== 成果物 ==\ncontext/vision_009.md に以下を含める:\n1. ビジョンステートメント（1文）\n\
+    2. ターゲットユーザー（ペルソナ）\n3. 競合ポジショニング\n4. MVP定義（ローンチに必須の機能リスト）\n5. ユーザー認証設計\n6. フェーズ別ロードマップ\n\
+    7. ローンチ計画（告知チャネル、初期ユーザー獲得戦略）\n8. 成功指標\n9. リスクと対策\n\n== 殿の生フィードバック（最重要。議論の出発点にせよ）\
+    \ ==\n\n殿が実際にサイトを触って感じたこと:\n\n「操作感がとても悪い。直感的じゃない。」\n\n具体的指摘:\na) ライブサーチがない。検索窓に打ったら候補がリアルタイムで出るべき\n\
+    b) 条件を絞っても対象数が動的に変わらない（ファセット検索の欠如）\nc) Enterを押さないと反映しない箇所がある。即時反映すべき\nd) alu.jpの「5つの好きな漫画を登録して」フローがわかりやすかった\n\
+    \   → 検索→候補表示→選択。これがUXの手本\ne) UXの最大化が全く考えられていない\n\n殿の要求（構造的）:\n- 類似サイトをソースコードレベルで分析せよ\n\
+    - UXパターン・機能・導線・便利機能をデータベースに蓄積せよ\n- 採用できる仕組みをどんどん採用せよ\n\n→ これは「見た目を良くする」話ではない。\n\
+    \  「ユーザーが迷わず、気持ちよく漫画を発見できる体験」を\n  競合サイトから学び、体系的に009に組み込む話。\n\n殿の追加構想（2026-02-26\
+    \ 23:40）:\nf) Deep Researchで出てきたファイル名解析ツール（Aniparse等）のような\n   漫画関連の便利機能・API・サイト・データを徹底的に網羅せよ。\n\
+    g) 漫画関連リソースを徹底網羅し、内部資産として蓄積する。\n   → 外部に「ハブです」と公開するわけではない。\n   → 集めた情報は009改善の内部資産。表に出すのは結果。\n\
+    \   → 必要なら008（プライベート側）で管理画面的に閲覧できればよい。\nh) 漫画エコシステム全体のカタログ化:\n   - 名前解析ツール（Aniparse,\
+    \ filename-parser, StashApp Parser）\n   - 書誌API（OpenBD, Google Books, Amazon PA-API,\
+    \ 楽天）\n   - スコア/メタデータDB（AniList, MAL, MangaDex, Kitsu, Bangumi）\n   - 公的データ（文化庁MADB）\n\
+    \   - 自己ホスト型ツール（Komga, Teemii, Mantium, KamiYomu, Mokuro Reader）\n   - AI/OCR（Manga\
+    \ OCR, Sprout, AniBrainAI）\n   - ニュースソース（コミックナタリー, Wikipedia）\n\n殿の追加指示（2026-02-26\
+    \ 23:45）:\ni) 最新のWeb技術をしっかり採用せよ（Next.js最新機能、React Server Components、\n   Streaming\
+    \ SSR、Edge Runtime、View Transitions API等）\nj) セキュリティもしっかりやれ（OWASP Top 10対策、CSP、認証/認可の堅牢化）\n\
+    k) 足軽が複数いるのだから、これらは並行で進めよ。\n   → デザイン改善/UX改善/データ収集/セキュリティ/技術刷新を同時に回せ。\n\n殿の核心的指摘（2026-02-26\
+    \ 23:50 — これが最上位原則）:\n「結局はWebサイトなんだから、UXが悪かったら、操作性が悪かったら、\n 定着しないよ。便利でも。」\n\n\
+    → 全議論・全設計・全実装において、UXを最上位の判断基準とせよ。\n  機能の上にUXを乗せるのではなく、UXの上に機能を乗せよ。\n  「この機能は便利か？」ではなく「この機能は気持ちよく使えるか？」で判断せよ。\n\
+    \n殿の構想（外部サービス連携）:\ns) 読んだ漫画を手入力させるのはUXが最悪。\n   AniList/MAL等のアカウント連携で読了リストを一括インポートできるようにせよ。\n\
+    \   → 初回ユーザーの入口を2つ用意:\n     ① AniList/MAL連携 → OAuth → 一括インポート → 即パーソナライズ\n   \
+    \  ② 手動で5作品選ぶ（alu.jp方式） → ライトに始める\n   → 手入力を強いないこと自体がUXの差別化。\n   → AniList OAuth、MAL\
+    \ OAuth の仕様を調査し、実装設計に含めよ。\n\n殿のフィードバック追加（レーダーチャート）:\nl) レーダーチャートに違和感がある。納得感がない。\n\
+    \   → 6軸の選定根拠、スコア算出ロジック、表示方法を再検討せよ。\n   → 「なぜこの軸か」「なぜこのスコアか」がユーザーに伝わる設計にせよ。\n\
+    \   → 軸の数・名前・算出方法を含め、ゼロベースで見直してよい。\n   → ruijianime.comやSproutの類似度表現方法も参考に。\n\
+    \   → 今すぐ直さなくてよいが、議論で扱え。\n\n殿の指摘（データ品質）:\nn) データが増えればゴミ情報も増える。AniListの外国漫画（manhwa/manhua/海外コミック）が\n\
+    \   日本漫画DBに混入するのが典型例。\n   → 「何を取り込まないか」のフィルタリングルールを設計に含めよ。\n   → データ品質管理: 入れるもの/弾くものの基準を明確にせよ。\n\
+    \n殿の方針確定（最重要）:\no) 009は日本漫画に特化する。これはブレない軸。\n   → manhwa/manhua/海外コミックは対象外。\n \
+    \  → 外部データ取り込み時は「日本漫画か否か」のフィルタを必ずかけよ。\n   → ビジョンステートメントに「日本漫画特化」を明記せよ。\n\np) 成人漫画・同人誌も対象。排除しない。\n\
+    \   → 日本の漫画文化として尊重する。殿の明確な意思。\n   → ただし公開サイトではゾーニング（年齢確認・フィルタ切替）が必要。\n   → AdSense等の収益化手段は成人コンテンツ制約があるため、その影響も議論に含めよ。\n\
+    \nq) ゾーニング方式: デフォルトはセーフモード（成人・同人は非表示）。\n   ユーザーが明示的にチェックを入れれば表示される。ペアレンタルコントロール的な設計。\n\
+    \   → 検索結果にも一覧にもデフォルトでは出てこない。\n   → 設定画面 or プロフィールで切替。\n   → これはユーザー登録なしでもcookie/localStorageで対応可能。\n\
+    \n殿の構想（原作・コミカライズ連携）:\nr) 異世界系を中心に、ラノベ/Web小説（カクヨム、なろう）→ コミカライズの流れが加速。\n   009はこの「上流」も視野に入れる:\n\
+    \   - 「この漫画の原作小説はこれ」→ 原作への導線\n   - 「原作を読もう！」特集ページ\n   - 「この小説、そろそろ漫画になるかも」→ コミカライズ予測\n\
+    \   - 殿自身がラノベ→漫画化を何作も見てきた実体験あり\n   → データソースとして「小説家になろう」「カクヨム」のAPI/データも調査対象に追加。\n\
+    \   → 漫画だけでなく、その原作まで含めた「日本のストーリーコンテンツのハブ」に発展する可能性。\n\n殿の参考サイト追加（2026-02-26 23:55）:\n\
+    m) http://ruijianime.com/comic/ — 類似検索の参考。\n   このサイトの類似検索の仕組み・UX・導線をソースコードレベルで分析せよ。\n\
+    \   009の類似検索（レーダー/タグベース）の改善に直結する。\n"
+- id: cmd_034
+  timestamp: '2026-02-27T00:00:00+09:00'
+  north_star: 漫画エコシステムの全貌を把握し、009が『漫画のことなら何でも知っているサイト』になるための情報基盤を作る
+  purpose: 世の中の漫画関連リソース（サイト・ツール・API・GitHub・SNS・出版社情報）が網羅的に収集・分類され、データベースとして蓄積される
+  acceptance_criteria:
+  - context/manga_ecosystem_catalog.md に網羅的カタログが作成されている
+  - 最低100件以上のリソースが収集・分類されている
+  - 各リソースにURL・概要・カテゴリ・利用可否・009への活用方法が記載されている
+  - カテゴリ別に整理されている（サイト/ツール/API/GitHub/SNS/出版社/データ）
+  - 特に優れたUX・機能を持つサイトは詳細分析付き
+  - 将来的にDB化（SQLite）するための構造設計案が含まれている
+  command: "殿の号令: 「もっともっと世の中の漫画のサイト、情報、ツール類、\nGitHubの機能、Twitterの情報、インスタの情報、出版社の情報、集めてこーい！！」\n\
+    \n== 殿がGeminiから取得した調査ガイド ==\ncontext/gemini_manga_tools_guide.md を必ず最初に読め。\nAwesome\
+    \ Lists（awesome-manga, free-anime-apis, awesome-japanese-nlp-resources）を\nクローンして出発点にせよ。芋づる式に辿れば100件は即座に集まる。\n\
+    \n== 受賞データ汚染の修正も含めよ ==\nwork_id 77385（推しの子）に58件の受賞が紐づいている。明らかに誤データ。\n原因を調査し、work_awards\
+    \ テーブルの不正データを修正せよ。\n他の作品にも同様の汚染がないか全件チェックすること。\n\n== データ品質ヘルスチェックの仕組みを作れ ==\n\
+    殿の指示: サンプルテスト等で統計学的に正しいことを証明せよ。\n- サンプルテスト: ランダムN件を実データと突合し正答率を計測\n- 異常値検知: 1作品に受賞10件以上\
+    \ → 自動フラグ\n- 年代整合性: 連載開始年より前の受賞 → 自動NG\n- 定期ヘルスチェック: データ追加時に自動実行するスクリプト\n- 結果をレポートとして出力（正答率、異常件数、修正件数）\n\
+    これは受賞データだけでなく、OpenBD・AniList等の全外部データに適用せよ。\n\n== これは全足軽並行の大規模情報収集作戦である ==\n\n\
+    足軽全員 + 軍師で分担し、漫画エコシステムの全貌を網羅せよ。\nWebSearch/WebFetch を駆使して徹底的に集めろ。\n\n== 収集カテゴリと担当分割案\
+    \ ==\n\n【A: 漫画サイト・サービス】（足軽2名）\n- 漫画発見・レコメンドサイト（alu.jp, ruijianime.com, manga-navi等）\n\
+    - 漫画データベースサイト（MAL, AniList, Bangumi, MangaUpdates等）\n- 漫画ニュースサイト（コミックナタリー, マンバ,\
+    \ ダヴィンチ等）\n- 電子書籍ストア（BookWalker, Kindle, DMMブックス, コミックシーモア, Renta!等）\n- 海外漫画サイト（MangaDex,\
+    \ MangaPlus, Webtoon等）\n- 漫画レビュー・ランキングサイト\n- 各サイトの特徴・UX・ユニーク機能を記録\n\n【B: GitHub・開発ツール】（足軽2名）\n\
+    - 漫画関連のGitHubリポジトリ（スター数順で上位を網羅）\n  検索キーワード: manga, comic, webtoon, manhwa, manhua,\n\
+    \  manga-reader, manga-tracker, manga-recommendation,\n  anilist, myanimelist,\
+    \ komga, tachiyomi\n- ファイル名解析ツール（Aniparse, filename-parser等）\n- 漫画OCRツール（Mokuro,\
+    \ manga-ocr等）\n- 漫画ビューア（Komga, Kavita, Tanoshi等）\n- レコメンドエンジン（Sprout, AniBrainAI等）\n\
+    - スクレイピングツール\n- API wrapper / client library\n- 各リポのスター数、最終更新日、言語、ライセンスを記録\n\n\
+    【C: API・データソース】（足軽1名）\n- 公式API一覧（OpenBD, AniList GraphQL, MAL API, MangaDex API,\n\
+    \  Google Books, Amazon PA-API, 楽天ブックス, Kitsu API等）\n- 公的データ（文化庁MADB, 国会図書館NDL,\
+    \ ISBN総目録等）\n- RSS/フィード（コミックナタリー, 出版社新刊情報等）\n- 各APIの認証方式、レート制限、データ内容、法的利用条件を記録\n\
+    \n【D: SNS・コミュニティ・出版社】（足軽1名 + 軍師）\n- Twitter/X: 漫画関連の有力アカウント、ハッシュタグ、トレンドの追い方\n\
+    - Instagram: 漫画レビュー系アカウント、BookStagram\n- Reddit: r/manga, r/mangarecommendations\
+    \ 等のサブレディット\n- Discord: 漫画コミュニティサーバー\n- 出版社公式サイト・API・新刊情報ページ\n  （集英社、講談社、小学館、KADOKAWA、秋田書店、白泉社、\n\
+    \   スクエニ、芳文社、双葉社、少年画報社 等）\n- 漫画賞の公式ページ一覧\n- 漫画関連イベント（コミケ、AnimeJapan等）\n\n【E: UX分析対象（詳細分析）】（軍師が選定・足軽が分析）\n\
+    以下は特に詳細なUX分析を行う:\n- alu.jp（オンボーディング、好み登録フロー）\n- ruijianime.com/comic/（類似検索のUI/UX）\n\
+    - AniList（プロフィール、リスト管理、スコアリング）\n- BookWalker（バッジ、カテゴリナビ）\n- anime.ameo.dev/Sprout（2Dアトラス可視化）\n\
+    分析項目: ページ構成、導線、インタラクション、レスポンシブ、\nライブサーチの有無、フィルタリングUI、ソースコード構造\n\n== 成果物フォーマット\
+    \ ==\n\ncontext/manga_ecosystem_catalog.md に以下の形式で蓄積:\n\n```\n## カテゴリ名\n\n###\
+    \ リソース名\n- URL:\n- 概要:\n- カテゴリ: サイト/ツール/API/GitHub/SNS/出版社\n- 特筆すべき機能/UX:\n- 009への活用可能性:\n\
+    - 法的利用条件:\n- 最終確認日:\n```\n\n== DB化への布石 ==\n将来的にこのカタログをSQLiteに入れて009上で検索可能にする構想あり。\n\
+    カタログのフォーマットはDB化を見据えた構造にせよ。\n\n== 注意 ==\n- 量を追え。最低100件。200件以上が理想。\n- ただし質も保て。URLが死んでいるもの、更新が止まっているものは明記。\n\
+    - 著作権・利用規約に注意。収集=利用ではない。利用可否は別途判断。\n- cmd_031/032/033と並行実行。足軽のキャパシティをフル活用。\n\n\
+    対象: ~/projects/010_multi-agent-shogun/context/\n"
+  project: manga_ecosystem
+  priority: critical
+  status: pending
+- id: cmd_037
+  timestamp: '2026-02-27T10:00:00+09:00'
+  north_star: 009を日本一の漫画発見サイトにする。足軽を1秒も空かせるな。殿の『もっともっと』に全力で応えよ
+  purpose: 全停止中のエージェントが再起動し、cmd_031-036の全作業が再開され、全足軽・軍師がフル稼働状態になる
+  acceptance_criteria:
+  - 家老・軍師・足軽全員がClaude Codeセッション起動済み
+  - cmd_031(デザイン改善)の残タスクが足軽にアサインされ作業中
+  - cmd_032(データ収集)の残タスクが足軽にアサインされ作業中
+  - cmd_034(エコシステム収集)が100件達成に向けて進行中
+  - cmd_035(バグ修正)・cmd_036(多軸設計)の残タスクが進行中
+  - dashboard.mdが最新状態に更新されている
+  command: '殿の号令:「もっともっと！！！」
+
+
+    == 最優先: 全軍再始動 ==
+
+    全エージェントが停止中。即座に全員起動し、前セッションの続きを再開せよ。
+
+
+    == 現在のcmd状況（将軍確認済み） ==
+
+    - cmd_031 (デザイン改善): 031d(ライブサーチ)/031f(レーダー修正) 進行中だった
+
+    - cmd_032 (データ収集): 032h(楽天ブックスAPI書影) 進行中だった
+
+    - cmd_034 (エコシステム): 108件達成済み。残りのUX詳細分析(E)が進行中だった
+
+    - cmd_035 (バグ修正): 035c(WorkResolver調査) 進行中だった
+
+    - cmd_036 (多軸設計): 036b(データ軸調査完了)/036a(アルゴリズム設計)/036c(レーベルマッピング) 進行中だった
+
+
+    == 方針 ==
+
+    1. 前セッションのサブタスクYAMLを確認し、未完了を即アサイン
+
+    2. 足軽を1秒も空かせるな。タスク完了したら即次を振れ
+
+    3. 軍師にはcmd_036aのアルゴリズム設計を優先させよ
+
+    4. dashboard.mdを即更新し、将軍に状況を見せよ
+
+
+    == 殿のテンション ==
+
+    激高。「もっともっと」は「今のペースでは足りない、加速しろ」の意。
+
+    全員フルスロットルで動け。
+
+    '
+  project: manga_ecosystem
+  priority: critical
+  status: complete
+  completed_at: "2026-02-27T23:59:00+09:00"
+  completion_note: "全軍再始動。cmd_031-036全完了・作戦006「意匠」完結。A+達成(Perf:76/A11y:100/BP:100/SEO:100/CLS:0)。"
+- id: cmd_038
+  timestamp: '2026-02-27T20:40:00+09:00'
+  north_star: 自宅サーバのGIP変動を即座に検知し、楽天API等のIP制限サービスを止めない。インフラの安定性が全サービスの基盤
+  purpose: GIP変更検知スクリプトが ~/.gip-monitor/ に完成し、launchd 5分間隔で自動実行され、IP変更時にLINE通知が届く
+  acceptance_criteria:
+  - ~/.gip-monitor/gip-monitor.sh が存在し、check/status/test/history/setup サブコマンドが動作する
+  - GIP取得がフォールバック対応（ifconfig.me → ipinfo.io/ip → api.ipify.org → checkip.amazonaws.com）
+  - IP変更検知時にLINE Messaging APIでプッシュ通知が届く
+  - LINE認証情報は ~/.gip-monitor/config から読み込み（コードに直書き禁止）
+  - launchd plist（5分間隔）が作成され、install.sh/uninstall.sh がある
+  - history.log にタイムスタンプ付き変更履歴が記録される
+  - GIP取得失敗時は3回リトライ、全失敗時エラー通知（連続エラー1時間抑制）
+  - setup サブコマンドで対話式セットアップ（トークン入力→テスト→launchd登録）が動作する
+  command: "殿の直接仕様書に基づくGIP変更検知スクリプト作成。\n\n言語: 一番メンテしやすいもの（bashが最もシンプルで依存なし。殿了承済み）。\n\
+    依存は curl のみ。\n\nGIP取得: フォールバック対応\nifconfig.me → ipinfo.io/ip → api.ipify.org →\
+    \ checkip.amazonaws.com\n\n変更検知: 前回IPをファイル保存、差分があれば通知\n\nLINE通知: curl で https://api.line.me/v2/bot/message/push\
+    \ を直接叩く\nメッセージ: 「\U0001F310 GIP変更検知\\n旧: xxx\\n新: yyy\\n時刻: YYYY-MM-DD HH:MM:SS」\n\
+    \nログ: ~/.gip-monitor/history.log にタイムスタンプ付き\n\n定期実行: launchd plist（5分間隔）+ install.sh\
+    \ / uninstall.sh\n\n設定: ~/.gip-monitor/config（権限600）\n  LINE_CHANNEL_TOKEN=\n\
+    \  LINE_USER_ID=\n\nエラー: 3回リトライ、全失敗時エラー通知（連続エラー1時間抑制）\n\nサブコマンド: check / status\
+    \ / test / history / setup\n\nファイル構成:\n~/.gip-monitor/\n├── gip-monitor.sh\n├──\
+    \ install.sh\n├── uninstall.sh\n├── config（権限600）\n├── current_ip.txt\n├── last_error.txt\n\
+    └── history.log\n\nセキュリティ: config に LINE トークン保管。スクリプトに直書き禁止。\n環境: Mac mini M4\
+    \ / macOS Darwin 25.x / launchd\n"
+  project: infra
+  priority: high
+  status: complete
+  completed_at: "2026-02-27T22:00:00+09:00"
+  completion_note: "GIPモニタースクリプト完成。launchd 5分間隔設定・LINE通知受信確認済み。~/.gip-monitor/ にフル実装。"
+- id: cmd_039
+  timestamp: '2026-02-27T21:40:00+09:00'
+  purpose: discover.perory.com のUX全体見直し — 読書ステータス刷新・星ハート廃止・タグ日本語化完全化
+  acceptance_criteria:
+  - ★星レーティングと❤️お気に入り（ハート）を全画面から撤去
+  - '読書ステータスUI刷新: ドロップダウン廃止 → 横並びトグルボタングループ'
+  - '未登録状態: 「＋ 本棚に追加」CTAボタン表示（アクション感のある誘導）'
+  - '登録後: 「読みたい | 読んでる | 読了」横並びボタン（タップ一発切替）'
+  - 'おすすめステータス: サイト内はワンクリック、外部連携時は確認ステップ（誤操作防止）'
+  - 'タグ表示: /ja ページで未翻訳英語タグが0件（現在155/387=40%カバー → 100%目標）'
+  - 'モバイルファースト: スマホでの操作性を最優先に設計'
+  subtasks_hint:
+    phase1_design:
+    - '軍師: UXリデザイン設計書作成（現状分析→問題点→改善案→モックアップ）'
+    - '参照: 既存コンポーネント reading-status-button.tsx, user-status-badges.tsx, use-reading-status.ts'
+    - '参照: onboarding-section.tsx の「選んでね」フロー'
+    phase2_status_ui:
+    - ★星レーティング関連コード撤去（use-rating.ts, star表示, 関連API）
+    - ❤️お気に入りUIを統合（use-favorites.tsはオンボーディングで使うので内部は残す、UIは撤去）
+    - reading-status-button.tsx → 横並びボタングループに全面書き換え
+    - '未登録CTA: 「＋ 本棚に追加」ボタン新規実装'
+    - '登録後トグル: 「読みたい | 読んでる | 読了」+ 解除ボタン'
+    - work-detail.tsx, work-card.tsx の表示を更新
+    phase3_tags:
+    - 未翻訳タグ232件（387-155）のマッピング追加
+    - ChatGPT/Gemini活用で一括翻訳 → 人力レビュー
+    - tag-translations.ts を更新
+    phase4_ux_polish:
+    - 全体UXレビュー（殿の目線で操作フローを通しチェック）
+    - モバイル操作性確認（タッチターゲット48px以上、ボタン間隔）
+  context: '殿のフィードバック要約:
+
+    1. 「読書状態」ラベルだと操作できると気づきにくい → アクション感のあるCTAに
+
+    2. プルダウンよりタップ一発トグル/ボタングループがスマホで操作しやすい
+
+    3. 星とハートは読書ステータスと重複 → 廃止
+
+    4. サイト内: マウスぽちぽちで即反映
+
+    5. 外部サイト: 確認ステップを挟む（おすすめ誤操作防止）
+
+    6. タグが日本語じゃないのが気になる → 全タグ日本語化
+
+    7. 既存Reactプロト（reading-status-button.tsx等）を参考にもっと良いUXに
+
+
+    技術コンテキスト:
+
+    - localStorage永続化（OAuth実装はMVP後1-2ヶ月）
+
+    - Next.js 15 + shadcn/ui + lucide-react
+
+    - i18n対応必須（ja/en）
+
+    - 現在のステータス: want/reading/completed（3状態 + null）
+
+    '
+  project: manga_discover
+  priority: critical
+  status: pending
+- id: cmd_040
+  timestamp: '2026-02-28T00:30:00+09:00'
+  purpose: 漫画ディスクデータをWindows CSV参照からMacローカルボリュームに切り替え、データ一致性を検証する
+  acceptance_criteria:
+  - Macボリューム（/Volumes/Manga01/Manga/0, /Volumes/Manga02/Manga/1）のファイル一覧をスキャンしてCSV生成
+  - 既存Windows CSV（003_manga/data/filelist_m0.csv, filelist_m1.csv）との差分レポート作成
+  - 文字化け・欠落・追加ファイルの検出と報告
+  - owned_files テーブルのパスをMac形式に更新（/mnt/m/0/ → /Volumes/Manga01/Manga/0/ 等）
+  - scanner.py の対象ディレクトリをMacパスに更新
+  - 'アクセス制御: スクリプトがManga/配下以外に絶対アクセスしないことを検証'
+  subtasks_hint:
+    phase1_scan:
+    - 'Macボリュームスキャン: /Volumes/Manga01/Manga/0/ と /Volumes/Manga02/Manga/1/ のファイル一覧CSV生成'
+    - スキャンはreadonly（stat取得のみ。タイムスタンプ変更操作は絶対禁止）
+    - '出力: 002_manga-system/data/filelist_mac_manga01.csv, filelist_mac_manga02.csv'
+    phase2_diff:
+    - Windows CSV（filelist_m0.csv, filelist_m1.csv）と Mac CSVの差分レポート
+    - '検出項目: (1)文字化け（NFC/NFD正規化差異）(2)Windows側のみ存在 (3)Mac側のみ存在 (4)サイズ不一致'
+    - 差分レポートを 002_manga-system/data/disk_diff_report.md に出力
+    phase3_update:
+    - owned_files テーブルのfile_pathをMacパスに一括変換
+    - 'パスマッピング: /mnt/m/0/ → /Volumes/Manga01/Manga/0/, /mnt/m/1/ → /Volumes/Manga02/Manga/1/'
+    - '変換前にバックアップ: cp manga_v2.db manga_v2.db.bak_winpath'
+    - scanner.py の SCAN_DIRS をMacパスに更新
+    phase4_access_control:
+    - 全スクリプト（scanner.py, import_filelist.py等）のパス参照を監査
+    - Manga/配下以外へのアクセスがないことを確認
+    - ボリュームルートへのアクセスを防止するガード追加
+  context: "ディスク構造:\n/Volumes/Manga01/Manga/0/\n  00_完了/     — 一般コミック完結 (7,107シリーズ)\n\
+    \  01_仕掛かり/  — 一般コミック連載中 (2,563シリーズ)\n/Volumes/Manga02/Manga/1/\n  10_異世界完了/ \
+    \    — 異世界完結 (405)\n  11_異世界仕掛かり/  — 異世界連載中 (1,389)\n  20_小説完了/       — 小説完結 (106)\n\
+    \  21_小説仕掛り/     — 小説連載中 (144)\n  99_その他全部/     — その他 (7)\n合計: 11,719シリーズフォルダ\n\
+    \nファイル名形式: (カテゴリ) [著者] タイトル 第XX巻.zip\n例: (一般コミック) [CLAMP] カードキャプターさくら 第01巻.zip\n\
+    \n重要制約:\n- Resilio Syncで共有中 → ファイルのタイムスタンプを変更する操作は厳禁\n- ボリュームの他のデータ（Manga/外）へのアクセス厳禁\n\
+    - スキャンはstat(readOnly)のみ。touch, mv, cp等のファイル操作禁止\n- 将来課題: ファイル名プレフィックス（一般コミック等）の分類見直し\n\
+    \n既存Windows CSV:\n- 003_manga/manga-collection-system/data/filelist_m0.csv (86K行,\
+    \ M:\\0)\n- 003_manga/manga-collection-system/data/filelist_m1.csv (12K行, M:\\\
+    1)\n- owned_files テーブル: 97,158件（/mnt/m/0/, /mnt/m/1/ 形式）\n\n一時フォルダ（/Volumes/Manga02/一時/）:\n\
+    - 100_DL先: 6,225ファイル（13dlローマ字ファイル名・文字化けあり）\n- 101_フォルダ名整理済: 329フォルダ（フォルダ名OK、中身は未確認）\n\
+    - 104_グルーピング先: グルーピング済み\n- update: 214ファイル（正規形式に変換済み）\n- 999_temp: 一時ファイル\n→ Phase5で一時フォルダの命名規則チェック・整備計画を策定\n\
+    \n既存ツール（002_manga-system）:\n- manga renamer match/rename: ファイル名変換パイプライン（parse→match→verify→rename）\n\
+    - filename_parser.py: (カテゴリ) [著者] タイトル 第XX巻.ext パース\n- 3段階検証 + レビューキュー + ドライラン\n\
+    - 802テスト通過\n"
+  subtasks_hint_extra:
+    phase5_temp_audit:
+    - 一時フォルダ（/Volumes/Manga02/一時/）の命名規則チェック
+    - '100_DL先: ローマ字→日本語ファイル名マッチング計画策定'
+    - '文字化けファイル: Shift-JIS→UTF-8変換候補リスト作成'
+    - manga renamer を使った変換dry-runテスト
+    - 'NOTE: 実際のリネームはdry-run結果を殿がレビュー後に実行（cmd_041の検証UIで実施）'
+  project: manga_system
+  priority: high
+  status: complete
+  completed_at: '2026-02-28T11:00:00'
+  completion_note: |
+    Mac移行フェーズ全完了。Phase1〜6完了。
+    owned_files 97,158件パス変換完了（M0:86203/M1:10955、/mnt/m/残存0件）。
+    config.yaml manga_db修正済み。scanner.py既にMacパス設定済みで変更不要。
+    Win側のみ606件の転送はcmd_044へ。一時フォルダのファイル整理はcmd_041の検証UIで実施。
+- id: cmd_041
+  timestamp: '2026-02-28T00:50:00+09:00'
+  purpose: 漫画ファイル検証Webサービスを008_manga-server（private）に構築。アーカイブ冒頭ページ表示+楽天書影照合+目視承認ワークフロー
+  acceptance_criteria:
+  - zip/rar/7zアーカイブから冒頭4ページをサムネイル抽出してWeb表示
+  - ファイル名・推定タイトル・推定著者・推定カテゴリを併記
+  - 楽天API書影とアーカイブ冒頭ページの画像類似度比較
+  - 類似度が高い場合は「自動照合済み」マーク（殿がスキップ可能）
+  - 殿が承認/却下/修正できるUIワークフロー
+  - 承認結果をmanga_v2.dbに反映（owned_files更新・リネーム指示生成）
+  - manga.perory.com でアクセス可能（CF Access認証配下）
+  subtasks_hint:
+    phase1_design:
+    - '軍師: 検証UI設計書作成'
+    - '画面構成: ファイル一覧 → 個別検証画面（4ページサムネ+書影+メタデータ）→ 承認/却下'
+    - 'バッチ処理: 楽天書影一致のものはリスト上で緑マーク→まとめてスキップ可能'
+    - '技術選定: 008のNext.js 15に組み込み or 独立APIルート'
+    phase2_backend:
+    - 'アーカイブ展開API: zip/rar/7zから先頭N画像を抽出'
+    - 画像サムネイル生成（sharp or PIL）
+    - 楽天書影との類似度比較（perceptual hash or SSIM）
+    - 'ファイルパスのセキュリティ: Manga/配下のみアクセス許可（パストラバーサル防止）'
+    phase3_frontend:
+    - 検証キュー一覧ページ（未検証/自動照合済/承認済/却下）
+    - '個別検証画面: 4ページサムネイル + 書影比較 + メタデータ編集'
+    - '承認ボタン: ワンクリック承認（修正不要の場合）'
+    - '修正フォーム: タイトル・著者・カテゴリを手動修正'
+    - 'キーボードショートカット: j/k（次/前）、a（承認）、r（却下）で高速レビュー'
+    phase4_integration:
+    - 承認結果 → manga_v2.db owned_files 更新
+    - リネーム指示YAML生成（manga renamerのdry-run形式）
+    - 殿がまとめて承認 → リネーム実行バッチ
+  context: '殿の要件:
+
+    - 同名の別作家があるので最終確認は殿が目視で行う
+
+    - トップ4ページの画像とファイル名が見えれば判断できる
+
+    - 楽天API書影と一致していればスキップ可能（自動照合）
+
+    - privateサーバー(manga.perory.com)で提供
+
+
+    技術コンテキスト:
+
+    - 008_manga-server: Next.js 15 + shadcn/ui、localhost:3000、manga.perory.com
+
+    - CF Access認証配下（DEV_MODE時はバイパス）
+
+    - manga_v2.db: 118K works、97K owned_files
+
+    - 対象: /Volumes/Manga02/一時/100_DL先 (6,225ファイル) が主対象
+
+    - アーカイブ形式: zip/rar/7z（rarは unrar コマンド必要）
+
+    - Resilio Sync: タイムスタンプ変更厳禁（サムネキャッシュは別ディレクトリに生成）
+
+
+    画像比較手法候補:
+
+    - perceptual hash (pHash): 高速・ロバスト。書影=表紙なので冒頭ページと一致しやすい
+
+    - SSIM: より精密だが遅い
+
+    - 推奨: pHash で90%以上一致 → 自動照合済み
+
+    '
+  project: manga_server
+  priority: high
+  status: complete
+  completed_at: '2026-02-28T05:12:00'
+  completion_note: |
+    Phase1(設計書)〜Phase3(フロントエンド)全完了。
+    実装済みAPI: verify/queue, verify/[fileId], verify/[fileId]/decide, verify/thumbnails/[hash]/[page], verify/scan, verify/stats, verify/export
+    実装済みページ: /verify(一覧), /verify/[fileId](個別検証+j/k/a/r/s)
+    manga-server再起動後に使用可能。バッチスキャン（POST /api/verify/scan）で6225件処理開始。
+- id: cmd_042
+  timestamp: '2026-02-28T10:00:00+09:00'
+  north_star: discover.perory.comを日本一の漫画発見サイトにする。A+達成済みだがLCP 7.4sは遅い。体感速度こそユーザー定着の鍵
+  purpose: discover.perory.comのLCPを7.4s→3.5s以下に改善し、体感速度を劇的に向上させる
+  acceptance_criteria:
+  - Lighthouse Performance スコア 85以上（現在76）
+  - LCP 3.5秒以下（現在7.4s）
+  - CLS 0維持
+  - 既存機能に退行なし（ビルド成功、主要ページ表示確認）
+  command: '009_manga-discover パフォーマンス最適化。
+
+
+    現状: A+達成済み（Perf:76/A11y:100/BP:100/SEO:100/CLS:0）だがLCP 7.4sが課題。
+
+
+    改善候補（家老判断で取捨選択せよ）:
+
+    - フォント最適化: Noto Sans JP woff2サブセット化（使用文字のみ）
+
+    - 画像最適化: next/image の sizes 属性適正化、priority設定見直し
+
+    - SSRキャッシュ: unstable_cache or ISR活用（静的ページのキャッシュ）
+
+    - バンドル最適化: dynamic import、不要JS削減
+
+    - DB クエリ最適化: discover.db のインデックス見直し
+
+
+    注意: discover.perory.com は公開サービス。変更後にビルド確認必須。
+
+    '
+  project: manga_discover
+  priority: high
+  status: complete
+  completed_at: "2026-02-28T04:48:00+09:00"
+  completion_note: "009_manga-discover LCP最適化完了（推定-2〜4s改善）。cmd_042 ✅"
+- id: cmd_043
+  timestamp: '2026-02-28T10:00:00+09:00'
+  north_star: 『AI分析』の中身を明確にし、類似作品レコメンドの精度を体感できるレベルに引き上げる。ユーザーが『なるほど、この観点で似てるのか』と納得できる推薦理由が差別化の核
+  purpose: レコメンドエンジンv2を設計・実装し、推薦理由の具体性と精度を向上させる
+  acceptance_criteria:
+  - '類似作品の推薦理由(reason_text)が具体的な共通要素を挙げている（例: 『ダークファンタジー×復讐劇という共通テーマ』）'
+  - 7シグナル（ジャンル/テーマ/ムード/設定/物語構造/キャラ類型/読者層）のうち最低3シグナルが推薦理由に反映
+  - トップ5類似作品の体感精度が改善（明らかな不適切推薦がない）
+  - compute処理が118K works で24時間以内に完了可能
+  - discover.perory.com/works/[id] で改善された推薦理由が表示される
+  command: "009_manga-discover レコメンドエンジンv2。\n\n現状: compute_v2で全118,330作品の類似作品計算済み（5,915,249行）。\n\
+    課題: reason_textが抽象的（「タグが似ている」レベル）で、ユーザーに響かない。\n\n改善方針:\n1. reason_text生成ロジックの改善\
+    \ — 共通タグを列挙するだけでなく、\n   「なぜ似ているか」をテーマ・ムード・構造の観点で説明\n2. 7シグナル重み付けの調整 — 現在の重みを分析し、精度改善\n\
+    3. タグカテゴリ活用 — 日本語化済み155タグのカテゴリ分類を推薦理由に活用\n\nvision_009.md v1.1 の多軸発見エンジン設計を参照。\n\
+    context/sakusen_006.md にこれまでの設計経緯あり。\n\n注意: compute は重い処理。まず reason_text 生成ロジックの改善から着手し、\n\
+    全件再計算が必要かどうかを判断してから実行。\n"
+  project: manga_discover
+  priority: high
+  status: complete
+  completed_at: "2026-02-28T10:58:00+09:00"
+  completion_note: "reason_text改善ロジック実装・全件再生成完了（599万件/0.6分/NULL 87%削減）。"
+
+- id: cmd_044
+  timestamp: "2026-02-28T09:30:00+09:00"
+  north_star: "Windows→Mac移行を完遂し、漫画DBをMac基準で完全統一する。606件の転送漏れを解消して検証UI(cmd_041)の入力データを完備する"
+  purpose: "Windows側のみに存在する606件のファイルをMacに転送するためのmoveバッチスクリプトと対象ファイルリストを作成する"
+  acceptance_criteria:
+    - "606件のWindowsパス一覧が外部ファイル(CSV or TXT)として出力されている"
+    - "moveバッチスクリプト(.bat or .ps1)が生成されている"
+    - "バッチはファイルリストを外部読み込みする形式（ハードコードしない）"
+    - "Windowsパス形式（M:\\0\\... M:\\1\\...）で出力されている"
+    - "実行は殿が手動で行う前提。dry-runモード付き"
+  command: |
+    002_manga-system Windows→Mac転送バッチ作成。
+
+    cmd_040 Phase2で判明した「Win側のみ606件」（M0: 558件 / M1: 48件）をMacに転送するための:
+    1. 対象ファイルリスト（外部ファイル）: Windowsパス形式で出力
+       - DBの owned_files テーブルに従来のWindowsパス（/mnt/m/0/, /mnt/m/1/ 形式）がある
+       - これをWindows形式（M:\0\..., M:\1\...）に変換して出力
+    2. moveバッチスクリプト: ファイルリストを読んで転送を実行
+       - 転送先: /Volumes/Manga02/Manga/ 配下の適切なカテゴリフォルダ
+       - dry-runモードをデフォルトにすること
+       - 殿が手動で実行する
+
+    注意: ファイルの自動移動・自動格納は禁止。あくまで「バッチと対象リストの作成」のみ。
+  project: manga_system
+  priority: high
+  status: complete
+  completed_at: "2026-02-28T11:06:00"
+  completion_note: "606件CSV(data/win_only_files.csv)+dry-run付き.bat(scripts/transfer_win_to_mac.bat)作成完了。--execで実転送。"
+
+- id: cmd_045
+  timestamp: "2026-02-28T09:30:00+09:00"
+  north_star: "DBの紐付けミスを修正し、ファイル名→作品名の自動マッチング精度を回復する。検証UI(cmd_041)の信頼性基盤"
+  purpose: "source_entryの誤紐付け（例: 142753→推しの子）を調査・修正し、同様の問題がないか全件スキャンする"
+  acceptance_criteria:
+    - "source_entry 142753 の誤紐付けが修正されている"
+    - "同様の誤紐付けパターンの全件スキャン結果レポートが作成されている"
+    - "修正スクリプトが再実行可能な形で保存されている"
+    - "manga_v2.db のバックアップを取ってから修正実行"
+  command: |
+    002_manga-system DB整合性修正作戦。
+
+    dashboard報告: source_entry 142753（１００日後に死ぬ悪役令嬢）が work_id=80（【推しの子】）に誤紐付け。
+    根本原因: スクレイピング時のwork-sourceentry紐付けミス。
+
+    フェーズ:
+    1. 調査: source_entry と works の紐付けで「タイトルが全く一致しない」ケースを全件スキャン
+    2. レポート: 誤紐付け候補リストを作成（work_id, source_entry_id, titles比較）
+    3. 修正: 明確な誤紐付けを修正（バックアップ必須）
+    4. 予防: 再発防止のバリデーションクエリを data_health_check.py に追加
+
+    重要: DB本体は data/db/manga_v2.db。バックアップ取得後に修正実行。
+  project: manga_system
+  priority: high
+  status: complete
+  completed_at: "2026-02-28T11:00:25"
+  completion_note: "20,071件誤紐付け修正完了(13dl:16,744+bszip:3,327→NULL)。バックアップ: manga_v2.db.bak_integrity_20260228。fix_source_entry_links.py+data_health_check.py作成済み。"
+
+- id: cmd_046
+  timestamp: "2026-02-28T09:45:00+09:00"
+  north_star: "publicとprivateを統一UIで運用し、殿が一つの操作体系で漫画コレクション全体を管理できるようにする。publicの発見体験をprivateの所有管理にシームレスにつなげる"
+  purpose: "009(public)のデザイン・UIコンポーネントをベースに、008(private)にprivateレイヤーを重ねる統合設計を策定・実装する"
+  acceptance_criteria:
+    - "軍師による統合設計書が完成している（UIコンポーネント共有方式、データフロー、認証レイヤー）"
+    - "008が009のUIデザイン（テーマ、コンポーネント、レイアウト）を共有している"
+    - "privateレイヤー機能（所有状況表示、検証UI、DLリンク等）が008に追加されている"
+    - "manga.perory.com でpublic同等のUIに加えprivate機能が使える"
+    - "publicデータ（レコメンド、タグ、スコア）をprivateから参照できる"
+  command: |
+    008/009 UI統合作戦 — publicデザインベース + privateレイヤー。
+
+    殿の方針:
+    - 009(public discover.perory.com)のデザイン・UIをベースに
+    - 008(private manga.perory.com)にprivate機能をレイヤーとして重ねる
+    - できるだけ同じUIを使いたい
+    - 難しければ最低限: レコメンドなどの処理元データだけpublicから引っ張る
+
+    設計フェーズ（軍師）:
+    1. 現状分析: 008と009の技術スタック・コンポーネント・データソースの差分調査
+    2. 統合方式の選定:
+       - A案: 共有UIライブラリ（packages/ui）を作り両方から参照
+       - B案: 009のコードを008にコピー＋private拡張
+       - C案: monorepo化（turborepo等）
+       - D案: 008から009のAPIを叩いてデータだけ取得（UI独立）
+    3. privateレイヤー設計: 所有フラグ表示、検証UIリンク、DLリンク、ファイル管理機能
+    4. データフロー: discover.db → manga_v2.db の参照関係
+
+    技術コンテキスト:
+    - 008: Next.js 15 + shadcn/ui, localhost:3000, manga.perory.com, CF Access認証
+    - 009: Next.js 15 + shadcn/ui, localhost:3002, discover.perory.com, 公開
+    - 両方ともshadcn/ui使用 → コンポーネント互換性高い
+    - 008にはcmd_041の検証UIが既に実装済み
+
+    まず軍師に設計レビューさせ、方式選定後に実装に入れ。
+  project: manga_ecosystem
+  priority: high
+  status: design_complete_v2
+  design_v2_completed_at: "2026-02-28T11:58:00"
+  design_v2_note: "方式C（Turborepo monorepo）設計書完成。5層セキュリティ分離。2.5-3週間・ピーク足軽3名。殿の承認待ち。context/sakusen_046_design.md"
+- id: cmd_047
+  timestamp: "2026-02-28T14:00:00+09:00"
+  north_star: "正確な状況把握なくして正しい判断なし。YAML衛生を整え、家老が常に真の状態を把握できるようにする"
+  purpose: "stale in_progressの6件(cmd_021,024,027,028,037,038)が正しいstatusに修正され、全完了cmdにcompleted_at/completion_noteが記入されている"
+  acceptance_criteria:
+    - "cmd_021,024,027,028,037,038のstatusが実態に合致している（完了済みならcomplete、本当に進行中ならin_progress据置）"
+    - "全完了cmdにcompleted_atフィールドが存在する"
+    - "全完了cmdにcompletion_noteフィールドが存在する"
+    - "campaigns.mdのステータスがYAMLと整合している"
+    - "grep 'status: in_progress' queue/shogun_to_karo.yaml で本当に進行中のもののみがヒットする"
+  command: |
+    YAML衛生整理作戦。
+
+    1. queue/shogun_to_karo.yaml の全cmdを確認
+    2. stale in_progress 6件（cmd_021,024,027,028,037,038）の実態を調査:
+       - queue/reports/ と dashboard.md を照合
+       - 完了済みなら status: complete + completed_at + completion_note を追記
+       - 本当に進行中なら据置（理由をnoteに記載）
+    3. 他の完了cmdでcompleted_at/completion_noteが欠けているものも補完
+    4. campaigns.md のステータスをYAMLと照合し、不整合を修正
+  project: multi_agent_shogun
+  priority: high
+  status: complete
+  completed_at: "2026-02-28T19:10:00+09:00"
+  completion_note: "YAML衛生整理完了。cmd_021/024/027/028/037をcompleteに修正。cmd_038/042/043にcompleted_at/completion_note追補。campaigns.md整合確認済み。残in_progressはcmd_018/029（意図的）のみ。"
+- id: cmd_048
+  timestamp: "2026-02-28T14:00:00+09:00"
+  north_star: "monorepoが安定動作することを確認し、次の開発作戦に安心して着手できる基盤を固める"
+  purpose: "monorepo(010)の主要機能が正常動作することが巡回テストで確認される"
+  acceptance_criteria:
+    - "inbox_write.sh が正常に動作する（メッセージ書き込み確認）"
+    - "inbox_watcher.sh が稼働中であることを確認"
+    - "stop_hook_inbox.sh がClaude Code hookとして登録・動作確認"
+    - "notify_lord.sh でLINE通知が殿に届く"
+    - "ntfy.sh が設定済みの場合、正常送信される（未設定なら静かにスキップ）"
+    - "slim_yaml.sh が正常動作する"
+    - "テスト結果がレポートとしてまとまっている"
+  command: |
+    monorepo巡回テスト（Step 7相当）。
+
+    主要スクリプトの動作確認:
+    1. scripts/inbox_write.sh — テストメッセージ送受信
+    2. scripts/inbox_watcher.sh — プロセス稼働確認
+    3. scripts/stop_hook_inbox.sh — hook登録確認
+    4. scripts/notify_lord.sh — LINE通知テスト（"テスト通知"を送信）
+    5. scripts/ntfy.sh — ntfy送信テスト（設定済みの場合のみ）
+    6. scripts/slim_yaml.sh — YAML圧縮テスト
+    各結果をレポートにまとめよ。
+  project: multi_agent_shogun
+  priority: high
+  status: complete
+  completed_at: "2026-02-28T19:30:00"
+  completion_note: "足軽1が全スクリプト動作確認完了。inbox_write/watcher/notify_lord/slim_yaml全OK。issue: stop_hook_inbox.sh 未登録（低優先）。
+- id: cmd_049
+  timestamp: "2026-02-28T14:00:00+09:00"
+  north_star: "ユーザー体験の質がサービスの生死を分ける。表示速度は第一印象であり、離脱率に直結する"
+  purpose: "009_manga-discover のLCPが7.4秒から5秒以下に改善される"
+  acceptance_criteria:
+    - "Lighthouse LCPスコアが5.0秒以下"
+    - "woff2フォント最適化が適用されている"
+    - "SSRキャッシュ戦略が実装されている（ISR or stale-while-revalidate）"
+    - "画像lazy loading が適切に設定されている"
+    - "npm run build が成功する"
+    - "改善前後のLighthouseスコア比較レポートがある"
+  command: |
+    009パフォーマンス改善作戦。目標: LCP 7.4s → 5s以下。
+
+    調査・実装対象:
+    1. フォント最適化: Google Fonts → woff2ローカルホスティング or next/font
+    2. SSRキャッシュ: ISR (revalidate) or stale-while-revalidate headers
+    3. 画像最適化: next/image + lazy loading + 適切なsizes属性
+    4. JS bundle分析: next-bundle-analyzer で重いモジュール特定
+    5. Critical CSS: 初期表示に不要なCSSの遅延読み込み
+
+    まず現状のLighthouse計測 → ボトルネック特定 → 対策実装 → 再計測。
+  project: manga_discover
+  priority: high
+  status: pending
+- id: cmd_050
+  timestamp: "2026-02-28T14:00:00+09:00"
+  north_star: "AIレコメンドが009の最大の差別化要因。精度向上が直接ユーザー価値に繋がる"
+  purpose: "レコメンドアルゴリズムv2の設計書が完成し、具体的な実装計画が策定される"
+  acceptance_criteria:
+    - "現行アルゴリズム（v1）の分析結果がドキュメント化されている"
+    - "v2で追加する要素（協調フィルタリング、コンテンツベース等）が設計されている"
+    - "必要なデータソースと収集方法が特定されている"
+    - "実装フェーズ分けと工数見積もりがある"
+    - "context/sakusen_NNN.md に設計書として記載されている"
+  command: |
+    レコメンドアルゴリズムv2設計（軍師主導）。
+
+    1. 現行v1の分析: 何をベースにレコメンドしているか、精度の課題
+    2. v2候補手法の調査:
+       - コンテンツベースフィルタリング（ジャンル/タグ/作者の類似度）
+       - 協調フィルタリング（ユーザー行動データ活用）
+       - ハイブリッド方式
+       - LLMベースのセマンティック類似度
+    3. データ要件: 閲覧履歴、評価データ、メタデータの充実度
+    4. 段階的実装計画（Phase 1-3）
+    5. context/に設計書作成
+  project: manga_discover
+  priority: medium
+  status: pending
+- id: cmd_051
+  timestamp: "2026-02-28T14:00:00+09:00"
+  north_star: "書影があると作品の視認性が劇的に上がる。カバレッジ30%到達で一覧ページの見栄えが大きく改善する"
+  purpose: "009の書影カバレッジが3.7%から30%以上に向上する"
+  acceptance_criteria:
+    - "楽天ブックスAPIからのバルク書影取得が実装されている"
+    - "取得した書影がDBに正しく格納されている"
+    - "書影カバレッジが30%以上（SELECT COUNT(*) WHERE cover_url IS NOT NULL）"
+    - "取得失敗時のフォールバック（プレースホルダー画像）が設定されている"
+    - "npm run build が成功する"
+  command: |
+    書影カバレッジ向上作戦（楽天バルク展開）。
+
+    現状: 3.7%（118K作品中わずか）
+    目標: 30%以上
+
+    実装計画:
+    1. 楽天ブックスAPIのバルク検索実装（ISBN/タイトルマッチ）
+    2. バッチ処理: 30件/セッション制限を考慮した段階的取得
+    3. DB格納: discover.db の cover_url フィールド更新
+    4. フォールバック: 取得失敗作品にはプレースホルダー設定
+    5. レート制限対応: 楽天API制限（1秒1リクエスト等）の遵守
+
+    Batch Processing Protocol準拠: batch1 → QC → 残りバッチの順で。
+  project: manga_discover
+  priority: medium
+  status: pending
+- id: cmd_052
+  timestamp: "2026-02-28T14:00:00+09:00"
+  north_star: "公開サービスの信頼性はセキュリティ基盤の上に成り立つ。CI/CDでの自動検査が防衛の第一線"
+  purpose: "008/009にセキュリティCI/CDパイプラインが導入され、push時に自動スキャンが実行される"
+  acceptance_criteria:
+    - "GitHub Actionsワークフローが008/009リポジトリに設定されている"
+    - "Semgrep（または同等のSAST）がpush時に実行される"
+    - "npm audit が自動実行される"
+    - "スキャン結果がGitHub PR上で確認できる"
+    - "既存の重大脆弱性が検出・リスト化されている"
+  command: |
+    セキュリティCI/CD導入作戦。
+
+    対象: 008_manga-server, 009_manga-discover
+
+    実装:
+    1. GitHub Actions ワークフロー作成
+       - Semgrep（SAST）: JavaScript/TypeScript脆弱性検出
+       - npm audit: 依存パッケージ脆弱性チェック
+       - Secret scanning: ハードコード秘密情報検出
+    2. PR時の自動実行設定
+    3. 初回フルスキャンの実行と結果レポート
+    4. 重大脆弱性の優先対応リスト作成
+
+    OWASP ZAPはステージング環境が必要なため将来対応。まずSAST+依存チェックから。
+  project: manga_ecosystem
+  priority: medium
+  status: pending
+- id: cmd_053
+  timestamp: "2026-02-28T14:00:00+09:00"
+  north_star: "旧リポジトリの退役はメンテナンスコスト削減と混乱防止の基盤。統合後の一元管理が運用効率を最大化する"
+  purpose: "旧008/009リポジトリが退役され、monorepo環境でのみ開発が行われる状態になる"
+  acceptance_criteria:
+    - "旧008/009の最終コミットがmonorepoに取り込まれている"
+    - "旧リポジトリのREADMEに退役通知とmonorepoへの誘導が記載されている"
+    - "DBマイグレーション手順が文書化されている"
+    - "launchd起動設定がmonorepoを参照するように更新されている"
+    - "Cloudflare Tunnel設定が新パスを参照している"
+    - "monorepoからnpm run build / npm run devが成功する"
+  command: |
+    旧リポジトリ退役 + DB移行作戦。
+
+    前提: cmd_046（monorepo統合設計）が承認・実装完了後に実行。
+    blocked_by: cmd_046
+
+    手順:
+    1. 旧008/009の最終状態をmonorepoブランチにマージ
+    2. DBマイグレーション:
+       - manga_v2.db, discover.db のパス変更
+       - 必要ならスキーマ統合
+    3. インフラ更新:
+       - launchctl plistのWorkingDirectory/ProgramArguments更新
+       - cloudflared config.ymlのパス更新
+    4. 旧リポジトリ:
+       - README.mdに退役通知
+       - アーカイブ（read-only）設定
+    5. 動作確認: monorepoからfull build + 両サイトアクセス確認
+  project: manga_ecosystem
+  priority: low
+  status: pending
+  blocked_by: cmd_046
+- id: cmd_054
+  timestamp: "2026-03-01T16:00:00+09:00"
+  north_star: "カバー画像はdiscoverの第一印象。4,300件の既存カバーを即座に反映し、収集パイプラインを復旧させる"
+  purpose: "discover.dbのカバー画像が最新状態に同期され、自動収集ジョブが正常稼働している"
+  acceptance_criteria:
+    - "sync_to_discover.sh を実行し、discover.db の cover_url が 4,300件以上になっている"
+    - "楽天API収集ジョブ (com.perory.manga-rakuten) の障害原因を特定し、修復完了"
+    - "Google Books収集ジョブ (com.perory.manga-googlebooks) の状態確認（429エラーなら待機で可）"
+    - "AniList収集スクリプト (collect_covers_anilist.py) の上限を3,274に拡大して実行"
+    - "全ジョブの動作確認後、dashboard.mdに収集パイプライン状況を記載"
+  command: |
+    カバー画像収集パイプライン復旧。
+
+    現状:
+    - discover.db: 1,736件 / manga_v2.db: 4,326件（同期遅れ）
+    - 楽天API: 2/28夜に0%ヒット率で失敗（DB locked + レート制限の可能性）
+    - Google Books: 0%ヒット率で稼働中（日本漫画のカタログ枯渇の可能性）
+    - AniList: 3,274件が未収集（TARGET_COUNT=100の制限）
+
+    手順:
+    1. 即時: bash ~/projects/002_manga-system/scripts/sync_to_discover.sh
+    2. 楽天API調査: collect_rakuten_books.py のaccessKeyパラメータ確認、curl単体テスト
+    3. Google Books: PID 57537が0%で走ってるなら停止判断
+    4. AniList: collect_covers_anilist.py のTARGET_COUNTを3274にして実行
+    5. 各ジョブのlaunchd設定と次回実行時刻を確認
+  project: manga_ecosystem
+  priority: high
+  status: complete
+  completed_at: "2026-03-01T01:41:00"
+  completion_note: "sync完了(1,736→4,388件+2,652件)。楽天DBロック原因特定(Google Books並行実行→停止済)。Google Books 0%で停止(APIキー要確認T3)。AniList 50/270バックグラウンド継続中。"
+- id: cmd_055
+  timestamp: "2026-03-01T16:00:00+09:00"
+  north_star: "デプロイ後の動作確認は品質保証の要。ユーザーが触る前にバグを潰す"
+  purpose: "discover.perory.com のトップページで画像が表示され、お気に入りボタンが全ページで機能する"
+  acceptance_criteria:
+    - "トップページ PickUp/Popular セクションでカード画像が表示されている"
+    - "作品カード左上にハートアイコンが表示される"
+    - "ハートタップでトグル動作（localStorage manga-favorites が更新される）"
+    - "作品詳細ページにお気に入りボタンが表示される"
+    - "/recommend ページがお気に入り追加を反映する"
+  command: |
+    discover.perory.com デプロイ後の動作確認。
+
+    将軍がコード修正済み・ビルド確認済み・サービス再起動済み。
+    変更内容:
+    1. queries.ts: 13個のSQLクエリにcover_url追加
+    2. favorite-button.tsx: 新規作成（ハートトグル、sm/defaultサイズ）
+    3. work-card.tsx: カード左上にFavoriteButtonオーバーレイ追加
+    4. work-detail.tsx: ReadingStatusButton横にFavoriteButton追加
+
+    検証手順:
+    1. curl https://discover.perory.com/ → HTMLにthumbnail.image.rakuten.co.jpのURLが含まれるか
+    2. ブラウザで目視確認（忍びに依頼可）
+    3. お気に入りトグル動作確認（DevToolsでlocalStorage確認）
+  project: manga_ecosystem
+  priority: high
+  status: complete
+  completed_at: "2026-03-01T01:50:00"
+  completion_note: "FavoriteButton PASS: favorite-button.tsx作成 + work-card/work-detail組み込み + ビルドOK + HTTP 200。cover_url表示も確認済み（楽天2件）。"
+- id: cmd_056
+  timestamp: "2026-03-01T16:30:00+09:00"
+  north_star: "カバー画像の品質が統一されていないとサイトの印象が悪い。画像ソースの選定は戦略的判断"
+  purpose: "各画像ソースの品質比較データが揃い、殿がソース選定の判断を下せる状態になる"
+  acceptance_criteria:
+    - "同一作品（人気作3〜5作品）について各ソースの画像URL・サイズ(px)・ファイルサイズ(KB)・画質の比較表が作成されている"
+    - "比較対象: 楽天Books, Google Books, OpenBD, AniList, Amazon (PA-API未導入でも商品ページからの情報)"
+    - "各ソースのAPI制約（レート制限、認証要否、コスト）がまとまっている"
+    - "ISBNベースで引ける全ソースの網羅性（96K ISBNに対する推定カバー率）"
+    - "結果をdashboard.mdの🚨要対応に記載（殿が判断するため）"
+  command: |
+    カバー画像ソース品質比較調査。殿からの直接指示。最優先。
+
+    殿の所感:
+    - AniListの画像は品質が低い（絵が稚拙、ファンアート混じり）
+    - 楽天・Amazonなど商品画像に絞りたい
+    - 楽天が入ってないのが根本問題
+
+    調査内容:
+    1. 人気作品3〜5作品を選び、各ソースでカバー画像を取得して比較
+       - 例: ワンピース、呪術廻戦、SPY×FAMILY、チェンソーマン、推しの子
+       - 各ソースのURL、画像サイズ(px)、ファイルサイズ(KB)を取得
+       - curl -sI でContent-Length、identify等で解像度確認
+    2. 各APIの制約まとめ:
+       - 楽天Books API: レート制限、認証方法、現在の障害状況
+       - Google Books API: 日本漫画カバー率、レート制限
+       - OpenBD API: カバー率、制約
+       - AniList API: 画質傾向
+       - Amazon PA-API: 導入コスト・要件（アフィリエイト必須？）
+    3. 96K ISBNに対する各ソースの推定カバー率
+    4. 推奨: ソース優先順位の提案
+
+    忍びにcurl調査させてもよい。結果は報告YAMLで将軍へ。
+
+    【追記: 殿の戦略決定】
+    - Amazon PA-APIが本命。ただしPA-API取得には売上実績が必要（180日以内に3件）
+    - Phase 1: Amazonアフィリエイト申請 + discoverにアフィリエイトリンク設置 → 売上実績を積む
+    - Phase 2: PA-API取得後、ISBN→ASIN→高品質画像の一括収集パイプライン構築
+    - AniListは品質不可。楽天は当面のつなぎ（復旧必要）。最終的にはAmazon画像に統一
+    - SiteStripe自動化はTOSリスクで却下
+    - 調査はこの戦略前提で、各ソースの「つなぎとしての価値」も評価すること
+  project: manga_ecosystem
+  priority: critical
+  status: complete
+  started_at: "2026-03-01T01:40:00"
+  completed_at: "2026-03-01T01:43:00"
+  assigned_to: shinobi_g
+  completion_note: "楽天APIキー無効(UUID形式)・既存URL1319件に?_ex=バグ→即修正可。Google Books 30%低品質。OpenBDカバーなし。推奨: 楽天URL修正→API再取得→Amazon PA-APIへ。"
+- id: cmd_057
+  timestamp: "2026-03-01T17:00:00+09:00"
+  north_star: "Amazon PA-APIへの道筋を開く。アフィリエイトリンクは売上実績とカバー画像の両方を解決する一石二鳥"
+  purpose: "Amazonアフィリエイトが申請され、discoverの作品詳細ページに購入リンクが設置されている"
+  acceptance_criteria:
+    - "Amazonアソシエイト申請手順が文書化されている（T4: 殿の手動操作が必要な箇所を明示）"
+    - "作品詳細ページのExternalLinksコンポーネントにAmazonアフィリエイトリンクが追加されている"
+    - "ISBN→ASINの変換ロジックが実装されている（ISBN-10=ASIN、ISBN-13→ISBN-10変換）"
+    - "リンクのフォーマット: https://www.amazon.co.jp/dp/{ASIN}?tag={affiliate_tag}"
+    - "ビルド確認済み"
+  command: |
+    Amazonアフィリエイトリンク設置。殿の戦略に基づく。
+
+    Phase 1実装:
+    1. Amazonアソシエイト申請手順の整理（殿のT4作業）
+       - 申請URL、必要情報、審査期間をまとめる
+       - dashboard.md 🚨要対応 に記載
+    2. discover作品詳細ページにAmazon購入リンク追加
+       - external-links.tsx にAmazonリンクセクション追加
+       - ISBN→ASIN変換（ISBN-10はそのまま、ISBN-13はチェックディジット除去+再計算）
+       - 対象: 96K全件ではなく売れ筋に絞る（コンバージョン最大化）
+         優先対象選定基準:
+           (1) popularity_score 上位（高スコア順）
+           (2) 受賞作品（award関連フラグ/テーブル）
+           (3) status=completed（完結済みシリーズ）= 全巻購入狙い、客単価UP
+         → 上位1,000〜3,000件にリンクを優先表示する設計とすること
+       - アフィリエイトタグは .env.local の AMAZON_ASSOCIATE_TAG から読む（未設定時はリンクなし）
+    3. 楽天アフィリエイトリンクも同時設置を検討
+       - 楽天にもISBNベースの商品リンクがある
+       - 楽天アフィリエイトIDも .env.local から
+
+    目的: 売上実績を積んでPA-API取得条件（180日3件）をクリアする
+  project: manga_ecosystem
+  priority: high
+  status: complete
+  started_at: "2026-03-01T01:54:00"
+  completed_at: "2026-03-01T01:59:50"
+  assigned_to: ashigaru4
+  associate_tag: discoverperor-22
+  result: "PASS。ISBN→ASIN変換実装(287K件)、ExternalLinks更新、discoverperor-22タグ、ビルド成功。ONE PIECE/ハイキュー動作確認済。"
+- id: cmd_058
+  timestamp: "2026-03-01T14:15:00+09:00"
+  north_star: "discover.perory.comを漫画ファンの定番サイトに育てるため、将軍が戦略提案する際のネタ元となる「アイデアデータベース」を構築・継続更新する"
+  purpose: "context/neta_book.md に、競合分析・収益化・UX・SEO・データ活用など全角度のアイデアが分類・蓄積され、将軍がいつでも殿に提案を引き出せる状態になっている"
+  acceptance_criteria:
+    - "context/neta_book.md に最低20個のアイデアエントリが記載されている"
+    - "8カテゴリ（M/U/C/S/T/P/G/D）のうち最低6カテゴリにエントリがある"
+    - "各エントリは着想元・概要・期待効果・実現難度を含む"
+    - "競合サイト最低5サイトの分析に基づくアイデアが含まれる"
+    - "discover.perory.comの現状（118K works、BookWalkerカバー89%見込み、レコメンドAI）を前提とした実行可能なアイデアである"
+  command: |
+    殿直々の指令：「漫才師のネタ帳」構想。
+
+    ## 背景
+    殿は将軍に対し、タスク管理だけでなく「漫画サイトのあるべき姿を継続的に構想し、あらゆる角度から検討し、他サイトを分析し、いつか使えるアイデア集をデータベース化せよ」と命じた。
+
+    ## 成果物
+    `context/neta_book.md` — 既にフォーマット作成済み。ここにアイデアを蓄積する。
+
+    ## 作業内容
+    1. **競合サイト徹底分析**（最低5サイト）:
+       - alu.jp（マンガコミュニティ）
+       - mangaupdates.com / MyAnimeList / AniList（英語圏DB）
+       - ブクログ / 読書メーター（読書SNS）
+       - マンガペディア / ニコニコ大百科
+       - BookWalker / コミックシーモア（デジタルストア）
+       各サイトの「うちにない良い機能」「収益モデル」「UXの工夫」を抽出
+
+    2. **カテゴリ別アイデア出し**:
+       - M: BookWalker以外の収益源（楽天、DMMアフィ、広告、有料会員）
+       - U: 作品詳細ページの充実（あらすじ、レビュー、関連作品、読了時間推定）
+       - C: 新刊情報パイプライン、映画化・アニメ化ニュース連携
+       - S: 長尾SEO（「○○ みたいな漫画」検索ワード）、OGP最適化
+       - T: PWA化、オフライン対応、画像CDN
+       - P: 出版社・書店との連携可能性
+       - G: ユーザー参加型コンテンツ（レビュー投稿、リスト共有）
+       - D: AI要約、感情分析、読書傾向予測
+
+    3. **既存カタログの活用**: `context/manga_ecosystem_catalog.md` から要点を抽出
+
+    ## 運用ルール
+    - **これは継続タスク**。初回20エントリ後も、空きリソースがある度に追加調査・蓄積を続ける
+    - 遊んでいる足軽がいたら「ネタ帳追加調査」を振る
+    - 軍師は週次で新しい角度のアイデアを探索し追記する
+    - Web検索を積極的に活用し、最新の漫画サイトトレンドを拾う
+
+    ## 注意
+    - 空想ではなく、実行可能性を意識したアイデアにすること
+    - discover.perory.comの現状（118K works、個人運営、BookWalkerアフィ、AIレコメンド）を前提とする
+    - 既存のmanga_ecosystem_catalog.mdは参照用。ネタ帳はそこから「使えるアイデア」を抽出した実行版
+  project: manga_ecosystem
+  priority: medium
+  status: pending
+
+- id: cmd_059
+  timestamp: "2026-03-01T18:00:00+09:00"
+  north_star: "discover.perory.comのカバー画像・アフィリエイトリンクが正しい通常単行本1巻のISBNを参照する"
+  purpose: "ISBN選択ロジックをMIN()からプレフィックス優先度ベースに全面置換し、間違ったカバーを再収集する"
+  acceptance_criteria:
+    - "context/design/isbn_selection.md の標準SQLスニペットが全4スクリプト・queries.ts全箇所に適用されている"
+    - "collect_kinokuniya_covers.py, collect_openbd.py, collect_google_books.py の MIN(isbn) が CASE ORDER BY に置換済み"
+    - "queries.ts の全18箇所の first_isbn サブクエリが CASE ORDER BY + LIMIT 1 に置換済み"
+    - "間違ったカバー（紀伊國屋の文庫版カバー約28件）がリセットされ、正しいISBNで再収集済み"
+    - "discover.perory.com をビルドしてエラーなし"
+    - "ONE PIECE, BLEACH, HUNTER×HUNTER, 銀魂, ゴールデンカムイ の5作品で正しいカバーが表示されることを目視確認"
+  command: |
+    殿直々の承認済み: ISBN選択優先度ルールの全面適用。
+
+    ## 設計書
+    `context/design/isbn_selection.md` に全ルール・SQLスニペット・適用対象が記載済み。必ず読んでから作業せよ。
+
+    ## 問題
+    MIN(isbn13)が文庫版/remix版ISBNを選んでしまい、カバー画像もアフィリエイトリンクも間違った版を指している。
+    集英社だけでも28件が間違い、今後の収集でさらに208件が間違う。queries.tsの18箇所も同様。
+
+    ## 作業内容
+
+    ### Phase 1: Pythonスクリプト修正（3ファイル）
+    1. `012_manga-workspace/scripts/collect_kinokuniya_covers.py` L151: MIN → CASE ORDER BY
+    2. `002_manga-system/collect_openbd.py` L104: MIN → CASE ORDER BY
+    3. `002_manga-system/collect_google_books.py` L95: MIN → CASE ORDER BY
+    ※ collect_bookwalker_covers.py は DESC順で既に正しいため変更不要
+
+    ### Phase 2: queries.ts修正（18箇所）
+    `012_manga-workspace/apps/public/src/lib/queries.ts` の全箇所で:
+    ```
+    (SELECT external_id FROM external_ids WHERE work_id = w.id AND source='isbn' LIMIT 1)
+    ```
+    を設計書のTypeScript用SQLスニペットに置換。
+
+    ### Phase 3: 間違ったカバーの再収集
+    1. discover.db で紀伊國屋URLのカバーをNULLにリセット:
+       `UPDATE works SET cover_url = NULL WHERE cover_url LIKE '%kinokuniya%'`
+    2. 修正済みスクリプトで再収集（--limit指定で対象のみ）
+
+    ### Phase 4: ビルド・検証
+    1. `cd apps/public && npx next build` — エラーなし確認
+    2. 5作品（ONE PIECE, BLEACH, HUNTER×HUNTER, 銀魂, ゴールデンカムイ）のカバー確認
+
+    ## 注意
+    - 設計書を「仕組み」として残してある。将来スクリプトを追加する際も同じルールに従うこと
+    - 他出版社のプレフィックスパターンが判明したらCASE句に追加可能
+  project: discover_isbn_fix
+  priority: high
+  status: in_progress
+
+- id: cmd_060
+  timestamp: "2026-03-01T18:00:00+09:00"
+  north_star: "discover.perory.comの受賞データを完全にする"
+  purpose: "文化庁メディア芸術祭マンガ部門の受賞データをcollect_awards.pyに追加し、ヴィンランド・サガ等が正しく表示される"
+  acceptance_criteria:
+    - "collect_awards.py に文化庁メディア芸術祭マンガ部門の大賞・優秀賞データ（第1回〜第25回）がハードコード追加されている"
+    - "ヴィンランド・サガに文化庁メディア芸術祭マンガ部門大賞（2009）が紐付いている"
+    - "既存10件のorphan award entriesが正しくwork_awardsにリンクされている"
+    - "discover.db にも同期済み"
+  command: |
+    文化庁メディア芸術祭マンガ部門の受賞データ追加。
+
+    ## 問題
+    - collect-mediaarts.py（スクレイパー）は25回中5回分しか取得できず、取得分もwork_awardsにリンクされていない
+    - ヴィンランド・サガの第13回（2009年）大賞が欠落
+    - 根本解決: collect_awards.py にハードコードデータとして追加（他の6賞と同パターン）
+
+    ## 作業内容
+    1. Wikipediaで文化庁メディア芸術祭マンガ部門の全受賞作品を調査（第1回1997年〜第25回2022年）
+    2. collect_awards.py に MEDIA_ARTS_AWARDS データを追加
+    3. スクリプト実行、マッチ結果確認
+    4. discover.db に同期（sync_awards.sh）
+    5. ヴィンランド・サガの詳細ページで2つの賞が表示されることを確認
+
+    ## 注意
+    - DBロックが続いている場合はBGプロセス完了後に同期
+    - 既存のcollect-mediaarts.pyは残す（将来のスクレイパー改善用）が、collect_awards.pyのハードコードが正本
+  project: discover_awards_fix
+  priority: medium
+  status: done
+
+- id: cmd_062
+  timestamp: "2026-03-01T19:00:00+09:00"
+  north_star: "MADBの~2024年以降の新刊データを補完する最適なデータソースを特定する"
+  purpose: "楽天API・NDL・BookWalker等で新刊漫画データ（発売日・ISBN・タイトル）を網羅的に取得する方法を調査・比較し、推奨パイプラインを設計する"
+  acceptance_criteria:
+    - "楽天ブックスAPIの漫画新刊検索能力（ジャンル×発売日、取得可能フィールド、レート制限、網羅性）が検証済み"
+    - "NDL Search APIの漫画検索能力（ISBN→書誌データ、新刊リスト、更新頻度）が検証済み"
+    - "BookWalkerの新刊ページからの情報取得可能性が調査済み"
+    - "各ソースの比較表（網羅性、鮮度、取得フィールド、制約）が作成されている"
+    - "推奨パイプライン案（どのソースをどう組み合わせるか）が提示されている"
+    - "結果が context/design/newrelease_pipeline.md に記載されている"
+  command: |
+    新刊データソース調査。殿の指示: MADBは~2024年で止まっているため、直近2-3年の漫画新刊データを網羅的に取得できるソースを探せ。
+
+    ## 調査対象
+
+    ### 1. 楽天ブックスAPI（最有力候補）
+    - アフィリエイトID設定済み: 517378b9.96d1233d.517378ba.80180b45
+    - 調査項目:
+      - ジャンル「漫画」×発売日範囲で検索できるか
+      - 取得可能フィールド（ISBN, タイトル, 著者, 出版社, 発売日, 価格, カバー画像URL）
+      - ページネーション・レート制限
+      - 網羅性（紙+電子？集英社含む？）
+      - 実際にAPIを叩いてサンプルデータを取得・確認すること
+
+    ### 2. NDL Search API（国立国会図書館）
+    - https://ndlsearch.ndl.go.jp/api
+    - 調査項目:
+      - 漫画をジャンルで絞れるか
+      - 新着・更新データの取得方法
+      - ISBN→書誌データの正確性
+      - 更新頻度（リアルタイム？週次？）
+      - レート制限
+      - 実際にAPIを叩いてサンプルデータ確認
+
+    ### 3. BookWalker新刊ページ
+    - https://bookwalker.jp/schedule/ 等
+    - 電子版の発売日データ
+    - スクレイプの可否・robots.txt確認
+
+    ### 4. その他（見つかれば）
+    - 版元ドットコム API
+    - コミックナタリー RSS
+    - 出版社の新刊情報ページ
+
+    ## 成果物
+    `context/design/newrelease_pipeline.md` に以下を記載:
+    1. 各ソース比較表
+    2. 推奨パイプライン案（例: 楽天で週次新刊収集→NDLで書誌正確性チェック）
+    3. 実装の概算工数
+    4. MADBとの連結方法（manga_code付与）
+
+    ## 注意
+    - 実際にAPIを叩いて生データを確認すること（ドキュメントだけ読んで終わりにしない）
+    - discover.perory.comの現状（118K works、MADB backbone、楽天アフィ）を前提とする
+    - JPROは個人契約不可のため除外
+  project: newrelease_pipeline
+  priority: medium
+  status: in_progress
+
+- id: cmd_061
+  timestamp: "2026-03-01T18:30:00+09:00"
+  north_star: "MADBデータセットを正本データとしてプロジェクトに統合し、作品マスタの精度・網羅性を向上させる"
+  purpose: "フォーク済みMADBデータセットの構造を分析し、既存manga_v2.dbとの差分・統合方針を報告する"
+  acceptance_criteria:
+    - "MADB JSON-LDデータの構造（フィールド一覧、レコード数、manga_code形式）が分析済み"
+    - "cm101（単巻）, cm104（単巻シリーズ）, cm107（作品）の3カテゴリのサンプルデータ内容が報告されている"
+    - "既存manga_v2.dbとの差分（MADBにあって手元にないフィールド、逆も）が整理されている"
+    - "ISBN, manga_code, タイトル, 出版社, 巻数情報等のマッピング方針案が提示されている"
+    - "データの鮮度制限（~2024年）と直近データの補完ソース案が報告されている"
+    - "分析結果が context/design/madb_dataset.md に記載されている"
+  command: |
+    MADBデータセットの分析と統合方針策定。
+
+    ## 背景
+    殿がフォーク済み: https://github.com/ayubon2/dataset
+    上流: https://github.com/mediaarts-db/dataset
+    MADBはこのプロジェクトのデータの背骨（manga_code）。公式データセットをJSON-LDで入手可能になった。
+
+    ## 作業内容
+
+    ### Phase 1: リポジトリクローン＆データ解凍
+    1. `gh repo clone ayubon2/dataset /Users/nobi/projects/010_multi-agent-shogun/projects/madb-dataset`
+    2. 漫画関連ファイルを解凍:
+       - data/json-ld/metadata_cm-item_cm101_json.zip（単巻）
+       - data/json-ld/metadata_cm-col_cm104_json.zip（単巻シリーズ）
+       - data/json-ld/metadata_cm-col_cm107_json.zip（作品）※あれば
+       - data/json-ld/metadata_cm-item_cm102_json.zip（雑誌号）
+       - data/json-ld/metadata_cm-item_cm103_json.zip（その他）
+
+    ### Phase 2: データ構造分析
+    1. 各カテゴリのJSONスキーマ（フィールド一覧）を抽出
+    2. レコード数をカウント
+    3. manga_code の形式を確認（既存DBと一致するか）
+    4. ISBN がどのフィールドにあるか特定
+    5. タイトル、著者、出版社、出版日、巻数などの項目マッピング
+    6. サンプルとして有名作品（ONE PIECE, 鬼滅の刃等）のデータを抽出して内容確認
+
+    ### Phase 3: 既存DBとの差分分析
+    1. manga_v2.db の works テーブルスキーマと比較
+    2. MADBにあって手元にないフィールド（活用候補）
+    3. 手元にあってMADBにないデータ（BookWalkerカバー、AniListスコア等）
+    4. manga_code の一致率を概算
+
+    ### Phase 4: 統合方針案の策定
+    1. 差分を埋める具体的な手順案
+    2. データ鮮度の制限（~2024年）と補完ソースの提案
+    3. 定期更新の仕組み（upstream sync）
+    4. 結果を context/design/madb_dataset.md に記載
+
+    ## 注意
+    - 分析・報告のみ。DBの変更はしない
+    - JSON-LDはRDF形式なので、@context/@type/@id等のRDF構造を理解してパースすること
+    - PDFの仕様書（doc/MADBメタデータスキーマ仕様書.pdf）も参照すること
+    - データは~2024年まで。直近2-3年分は別ソース（Wikipedia、出版社サイト等）が必要
+  project: madb_integration
+  priority: medium
+  status: in_progress
