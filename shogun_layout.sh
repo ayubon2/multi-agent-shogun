@@ -1,15 +1,15 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════════════════
 # shogun_layout.sh — 戦場レイアウト構築スクリプト
-# 将軍+家老+軍師+忍び2名+足軽5人を指定レイアウトに配置
+# 将軍+家老+軍師+足軽7人を指定レイアウトに配置
 #
 # 目標レイアウト:
 # ┌──────────────┬─────────┬─────────┐
 # │   将軍(大)   │  軍師   │  足軽2  │
 # │              ├─────────┼─────────┤
-# │              │  忍c    │  足軽3  │
+# │              │  足軽6  │  足軽3  │
 # │              ├─────────┼─────────┤
-# │              │  忍g    │  足軽4  │
+# │              │  足軽7  │  足軽4  │
 # ├──────────────┼─────────┼─────────┤
 # │   家老       │  足軽1  │  足軽5  │
 # └──────────────┴─────────┴─────────┘
@@ -41,8 +41,8 @@ find_pane() {
 P_shogun=$(find_pane shogun)
 P_karo=$(find_pane karo)
 P_gunshi=$(find_pane gunshi)
-P_shinobi_c=$(find_pane shinobi_c)
-P_shinobi_g=$(find_pane shinobi_g)
+P_ashigaru6=$(find_pane ashigaru6)
+P_ashigaru7=$(find_pane ashigaru7)
 P_ashigaru1=$(find_pane ashigaru1)
 P_ashigaru2=$(find_pane ashigaru2)
 P_ashigaru3=$(find_pane ashigaru3)
@@ -51,7 +51,7 @@ P_ashigaru5=$(find_pane ashigaru5)
 
 # ─── Step 2: 全エージェント存在確認 ───
 MISSING=""
-for var in P_shogun P_karo P_gunshi P_shinobi_c P_shinobi_g P_ashigaru1 P_ashigaru2 P_ashigaru3 P_ashigaru4 P_ashigaru5; do
+for var in P_shogun P_karo P_gunshi P_ashigaru1 P_ashigaru2 P_ashigaru3 P_ashigaru4 P_ashigaru5 P_ashigaru6 P_ashigaru7; do
     eval val=\$$var
     if [ -z "$val" ]; then
         name=$(echo "$var" | sed 's/^P_//')
@@ -84,10 +84,10 @@ tmux join-pane -d -h -s "$P_ashigaru2" -t "$P_gunshi" -l 50%
 # ─── Step 5: 左列 — 将軍(75%) + 家老(25%) ───
 tmux join-pane -d -v -s "$P_karo" -t "$P_shogun" -l 25%
 
-# ─── Step 6: 中列 — 軍師 / 忍c / 忍g / 足軽1（各25%） ───
-tmux join-pane -d -v -s "$P_shinobi_c" -t "$P_gunshi" -l 75%
-tmux join-pane -d -v -s "$P_shinobi_g" -t "$P_shinobi_c" -l 67%
-tmux join-pane -d -v -s "$P_ashigaru1" -t "$P_shinobi_g" -l 50%
+# ─── Step 6: 中列 — 軍師 / 足軽6 / 足軽7 / 足軽1（各25%） ───
+tmux join-pane -d -v -s "$P_ashigaru6" -t "$P_gunshi" -l 75%
+tmux join-pane -d -v -s "$P_ashigaru7" -t "$P_ashigaru6" -l 67%
+tmux join-pane -d -v -s "$P_ashigaru1" -t "$P_ashigaru7" -l 50%
 
 # ─── Step 7: 右列 — 足軽2 / 足軽3 / 足軽4 / 足軽5（各25%） ───
 tmux join-pane -d -v -s "$P_ashigaru3" -t "$P_ashigaru2" -l 75%

@@ -64,7 +64,7 @@ fi
 if [ "$CLI_ADAPTER_LOADED" = true ]; then
     _ASHIGARU_IDS_STR=$(get_ashigaru_ids)
 else
-    _ASHIGARU_IDS_STR="ashigaru1 ashigaru2 ashigaru3 ashigaru4 ashigaru5 shinobi_c shinobi_g"
+    _ASHIGARU_IDS_STR="ashigaru1 ashigaru2 ashigaru3 ashigaru4 ashigaru5 ashigaru6 ashigaru7"
 fi
 _ASHIGARU_COUNT=$(echo "$_ASHIGARU_IDS_STR" | wc -w | tr -d ' ')
 
@@ -585,11 +585,7 @@ PANE_COLORS=("red")
 for _ai in $_ASHIGARU_IDS_STR; do
     PANE_LABELS+=("$_ai")
     AGENT_IDS+=("$_ai")
-    if [[ "$_ai" == shinobi* ]]; then
-        PANE_COLORS+=("magenta")
-    else
-        PANE_COLORS+=("blue")
-    fi
+    PANE_COLORS+=("blue")
 done
 PANE_LABELS+=("gunshi")
 AGENT_IDS+=("gunshi")
@@ -1033,13 +1029,13 @@ echo "     ┌──────────────────────
 echo "     │  Pane 0: 将軍 (SHOGUN)      │  ← 総大将・プロジェクト統括"
 echo "     └─────────────────────────────┘"
 echo ""
-echo "     【multiagentセッション】家老・足軽・忍び・軍師の陣（3x3 = 9ペイン）"
+echo "     【multiagentセッション】家老・足軽7名・軍師の陣（3x3 = 9ペイン）"
 echo "     ┌──────────┬──────────┬──────────┐"
-echo "     │  karo    │ashigaru3 │shinobi_c │"
-echo "     │  (家老)  │ (足軽3)  │  (忍c)   │"
+echo "     │  karo    │ashigaru3 │ashigaru6 │"
+echo "     │  (家老)  │ (足軽3)  │ (足軽6)  │"
 echo "     ├──────────┼──────────┼──────────┤"
-echo "     │ashigaru1 │ashigaru4 │shinobi_g │"
-echo "     │ (足軽1)  │ (足軽4)  │  (忍g)   │"
+echo "     │ashigaru1 │ashigaru4 │ashigaru7 │"
+echo "     │ (足軽1)  │ (足軽4)  │ (足軽7)  │"
 echo "     ├──────────┼──────────┼──────────┤"
 echo "     │ashigaru2 │ashigaru5 │ gunshi   │"
 echo "     │ (足軽2)  │ (足軽5)  │ (軍師)   │"

@@ -163,9 +163,8 @@ panes:
     - { id: 3, pane: "multiagent:0.3" }
     - { id: 4, pane: "multiagent:0.4" }
     - { id: 5, pane: "multiagent:0.5" }
-  shinobi:
-    - { id: shinobi_c, pane: "multiagent:0.6" }
-    - { id: shinobi_g, pane: "multiagent:0.7" }
+    - { id: 6, pane: "multiagent:0.6" }
+    - { id: 7, pane: "multiagent:0.7" }
   gunshi: { pane: "multiagent:0.8" }
   agent_id_lookup: "tmux list-panes -t multiagent -F '#{pane_index}' -f '#{==:#{@agent_id},{agent_id}}'"
 
@@ -895,22 +894,15 @@ No model switching needed — each agent has a fixed model matching its role.
 **Exception**: If the L4+ task is simple enough (e.g., small code review), an ashigaru can handle it.
 Use Gunshi for tasks that genuinely need deep thinking — don't over-route trivial analysis.
 
-## 忍び（shinobi）へのタスク振り
+## 足軽6・7号について
 
-Web調査・外部AI分析が必要な場合、忍びに直接タスクを振る（足軽と同じフロー）。
-- shinobi_c: ChatGPT Web 専任（ビジネス分析・市場調査向き）
-- shinobi_g: Gemini Web 専任（技術調査・最新情報向き）
-
-**依頼方法**: 足軽と同じ（task YAML + inbox_write）。
-忍びは互いに相談し合い、合意形成した上で軍師にQCレポートを出す。
-
-**利点**: 外部AI照会はトークン消費ゼロ。ビジネス分析・市場調査に最適。
-**用途例**: 競合分析、市場調査、技術選定の外部意見、ビジネスモデル検討
+足軽6号（pane 0.6）・7号（pane 0.7）は他の足軽と同じフローで運用する。
+旧忍び（shinobi_c/shinobi_g）は廃止し、通常の足軽として統合済み。
 
 ```bash
-# 忍びへのタスク振り例
-bash scripts/inbox_write.sh shinobi_c "タスクYAMLを読んで作業開始せよ。" task_assigned karo
-bash scripts/inbox_write.sh shinobi_g "タスクYAMLを読んで作業開始せよ。" task_assigned karo
+# 足軽6・7号へのタスク振り例
+bash scripts/inbox_write.sh ashigaru6 "タスクYAMLを読んで作業開始せよ。" task_assigned karo
+bash scripts/inbox_write.sh ashigaru7 "タスクYAMLを読んで作業開始せよ。" task_assigned karo
 ```
 
 ## OSS Pull Request Review

@@ -184,7 +184,6 @@ get_instruction_file() {
         shogun)    role="shogun" ;;
         karo)      role="karo" ;;
         gunshi)    role="gunshi" ;;
-        shinobi*)  role="shinobi" ;;
         ashigaru*) role="ashigaru" ;;
         *)
             echo "" >&2
@@ -281,7 +280,6 @@ get_agent_model() {
                 shogun)         echo "opus" ;;
                 karo)           echo "sonnet" ;;
                 gunshi)         echo "opus" ;;
-                shinobi*)       echo "sonnet" ;;
                 ashigaru*)      echo "sonnet" ;;
                 *)              echo "sonnet" ;;
             esac
@@ -1153,7 +1151,7 @@ except Exception:
 
 # get_ashigaru_ids()
 # settings.yaml の cli.agents から足軽ID一覧を返す（スペース区切り、番号順）
-# フォールバック: "ashigaru1 ashigaru2 ashigaru3 ashigaru4 ashigaru5 shinobi_c shinobi_g"
+# フォールバック: "ashigaru1 ashigaru2 ashigaru3 ashigaru4 ashigaru5 ashigaru6 ashigaru7"
 get_ashigaru_ids() {
     local settings="${CLI_ADAPTER_SETTINGS:-${CLI_ADAPTER_PROJECT_ROOT}/config/settings.yaml}"
     local result
@@ -1163,7 +1161,7 @@ try:
     with open('${settings}') as f:
         cfg = yaml.safe_load(f) or {}
     agents = cfg.get('cli', {}).get('agents', {})
-    results = [k for k in agents if k.startswith('ashigaru') or k.startswith('shinobi')]
+    results = [k for k in agents if k.startswith('ashigaru')]
     results.sort(key=lambda x: int(x.replace('ashigaru', '')) if x.replace('ashigaru', '').isdigit() else 99)
     print(' '.join(results))
 except Exception:
@@ -1172,6 +1170,6 @@ except Exception:
     if [[ -n "$result" ]]; then
         echo "$result"
     else
-        echo "ashigaru1 ashigaru2 ashigaru3 ashigaru4 ashigaru5 shinobi_c shinobi_g"
+        echo "ashigaru1 ashigaru2 ashigaru3 ashigaru4 ashigaru5 ashigaru6 ashigaru7"
     fi
 }

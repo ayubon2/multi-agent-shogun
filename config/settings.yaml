@@ -28,8 +28,8 @@ cli:
     ashigaru3: { model: sonnet }
     ashigaru4: { model: sonnet }
     ashigaru5: { model: sonnet }
-    shinobi_c: { model: sonnet }
-    shinobi_g: { model: sonnet }
+    ashigaru6: { model: sonnet }
+    ashigaru7: { model: sonnet }
 
 # ログ設定
 logging:

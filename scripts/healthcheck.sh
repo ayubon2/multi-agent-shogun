@@ -9,7 +9,7 @@ QUEUE_DIR="$SCRIPT_DIR/queue"
 
 # Pane mapping: index=agent_id
 pane_ids=(2 3 4 5 6 7 8 9 10)
-expected_agents=(karo gunshi shinobi_c shinobi_g ashigaru1 ashigaru2 ashigaru3 ashigaru4 ashigaru5)
+expected_agents=(karo ashigaru1 ashigaru2 ashigaru3 ashigaru4 ashigaru5 ashigaru6 ashigaru7 gunshi)
 
 echo "═══════════════════════════════════════════════════════"
 echo " SHOGUN SYSTEM HEALTH CHECK"
