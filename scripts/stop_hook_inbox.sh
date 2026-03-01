@@ -85,7 +85,13 @@ if [ -n "$LAST_MSG" ]; then
     fi
 fi
 
-# ─── Check inbox for unread messages ───
+# ─── Check inbox for unread messages (shogun only) ───
+# Other agents (karo/ashigaru/gunshi) are woken by inbox_watcher.sh nudges.
+# Blocking their stop creates a circular lock: agent can't stop → can't process inbox.
+if [ "$AGENT_ID" != "shogun" ]; then
+    exit 0
+fi
+
 INBOX="$SCRIPT_DIR/queue/inbox/${AGENT_ID}.yaml"
 
 if [ ! -f "$INBOX" ]; then

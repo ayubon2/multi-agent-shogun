@@ -1599,7 +1599,9 @@ commands:
     - JPROは個人契約不可のため除外
   project: newrelease_pipeline
   priority: medium
-  status: in_progress
+  status: done
+  completed_at: "2026-03-01T23:17:20"
+  result: "楽天★★★主軸（107K件・月次3000件・カバー画像）、NDL★★☆補完、BW★★☆メタ、OpenBD★☆☆検証用。context/design/newrelease_pipeline.md作成済み。"
 
 - id: cmd_061
   timestamp: "2026-03-01T18:30:00+09:00"
