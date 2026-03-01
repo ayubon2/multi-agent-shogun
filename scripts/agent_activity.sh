@@ -90,12 +90,12 @@ run_check() {
 
     # Working directory file changes
     local workspace_changes
-    workspace_changes=$(find ~/projects/manga-workspace -name '*.ts' -o -name '*.tsx' -o -name '*.json' -o -name '*.css' 2>/dev/null | xargs stat -f '%m' 2>/dev/null | sort -rn | head -1)
+    workspace_changes=$(find ~/projects/012_manga-workspace -name '*.ts' -o -name '*.tsx' -o -name '*.json' -o -name '*.css' 2>/dev/null | xargs stat -f '%m' 2>/dev/null | sort -rn | head -1)
     if [ -n "$workspace_changes" ]; then
         local now_ts
         now_ts=$(date +%s)
         local age=$(( (now_ts - workspace_changes) / 60 ))
-        printf "manga-workspace last file change: %s min ago\n" "$age"
+        printf "012_manga-workspace last file change: %s min ago\n" "$age"
     fi
 }
 

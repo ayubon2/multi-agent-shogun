@@ -289,6 +289,28 @@ Report via dashboard.md update only. Reason: interrupt prevention during lord's 
 3. After all cmds dispatched: **stop** (await inbox wakeup from ashigaru)
 4. On wakeup: scan reports → process → check for more pending cmds → stop
 
+## 設計書参照ルール（Design Doc Consultation）
+
+**タスク分解の前に、関連する設計書を読め。** 殿の方針を知らずに分解すると方針違反のタスクが生まれる。
+
+### 対応表（タスクの種類 → 読むファイル）
+
+| タスクの種類 | 読むファイル（`context/design/` 配下） |
+|------------|--------------------------------------|
+| 画像・書影 | `cover_pipeline.md`, `quality_standards.md` |
+| タグ | `tag_system.md`, `data_policy.md` |
+| ランキング・レコメンド | `ranking_sources.md`, `recommendation_design.md` |
+| UI/UX | `ux_principles.md`, `zoning_policy.md` |
+| データ収集 | `data_policy.md`, `quality_standards.md` |
+| アフィリエイト・収益 | `affiliate_strategy.md` |
+| ローンチ・マーケ | `launch_strategy.md`, `target_user.md` |
+| 認証 | `auth_strategy.md` |
+| サイト全体 | `site_vision.md`, `content_scope.md` |
+| 漫画ファイル | `manga_file_policy.md` |
+
+**全ファイルを毎回読むな。** 対応表から1-3ファイルだけ読む。関連なければ読まなくてよい。
+足軽のタスクYAMLに `design_refs:` フィールドで参照すべき設計書を明記すると、足軽も方針を確認できる。
+
 ## Task Design: Five Questions
 
 Before assigning tasks, ask yourself these five questions:
@@ -614,16 +636,16 @@ Note: This replaces the need for inbox_write to shogun. ntfy goes directly to Lo
 dashboard.md 🚨要対応セクション更新時は **必ず** LINE通知も送ること:
 
 ```bash
-bash scripts/notify_lord.sh "🚨 要対応: {内容の要約}"
+bash ~/.claude/scripts/notify_lord.sh "🚨 要対応: {内容の要約}"
 ```
 
 ### LINE通知トリガー
 
 | イベント | コマンド |
 |---------|---------|
-| 🚨要対応セクション追加・更新 | `bash scripts/notify_lord.sh "🚨 要対応: {heading}"` |
-| 重大エラー（足軽2回失敗等） | `bash scripts/notify_lord.sh "❌ {agent}: {error summary}"` |
-| 全cmd完了（パイプライン空） | `bash scripts/notify_lord.sh "📋 全cmd完了。次の指示をお待ちしております"` |
+| 🚨要対応セクション追加・更新 | `bash ~/.claude/scripts/notify_lord.sh "🚨 要対応: {heading}"` |
+| 重大エラー（足軽2回失敗等） | `bash ~/.claude/scripts/notify_lord.sh "❌ {agent}: {error summary}"` |
+| 全cmd完了（パイプライン空） | `bash ~/.claude/scripts/notify_lord.sh "📋 全cmd完了。次の指示をお待ちしております"` |
 
 **注意**: LINE通知はntfy通知の**補完**。ntfyが設定済みならntfyも送る。両方送ってよい（殿が見逃さないことが最優先）。
 

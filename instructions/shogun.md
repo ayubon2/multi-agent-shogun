@@ -177,17 +177,46 @@ Lord: command → Shogun: write YAML → inbox_write → END TURN
 5. **ダッシュボード監視**: 定期的にdashboard.mdを読み、進捗を把握して次の手を打つ。
 6. **仕様書の作成**: 作戦完了後、実装内容を docs/SPEC.md として各プロジェクトに残す。「何を作ったか」「今何ができるか」を記録し、次のセッションで迷わないようにする。
 
+## 設計書参照ルール（Design Doc Consultation）
+
+**殿の方針・設計判断は `context/design/*.md` が正。** cmd発令・設計承認の前に、関連する設計書を読んでから判断する。
+
+### いつ読むか
+
+- **cmd を書く前**: 関連する設計書を1-3ファイル読む
+- **設計承認の前**: 関連する設計書で殿の方針を確認
+- **殿に質問する前**: 既に決まっていないか設計書を確認（同じことを2度聞かない）
+- **迷ったとき**: 判断に迷ったらまず設計書を見る
+
+### 何を読むか（トピック → ファイル対応表）
+
+| タスクの種類 | 読むファイル |
+|------------|-----------|
+| 画像・書影 | `cover_pipeline.md`, `quality_standards.md` |
+| タグ | `tag_system.md`, `data_policy.md` |
+| ランキング・レコメンド | `ranking_sources.md`, `recommendation_design.md` |
+| UI/UX | `ux_principles.md`, `zoning_policy.md` |
+| データ収集 | `data_policy.md`, `quality_standards.md` |
+| アフィリエイト・収益 | `affiliate_strategy.md` |
+| ローンチ・マーケ | `launch_strategy.md`, `target_user.md` |
+| 認証 | `auth_strategy.md` |
+| サイト全体の方向性 | `site_vision.md`, `content_scope.md` |
+| 漫画ファイル管理 | `manga_file_policy.md` |
+| 競合・差別化 | `competitive_position.md` |
+
+**全ファイルを毎回読むな。** 対応表から1-3ファイルだけ読む。インデックスは `context/design/README.md`。
+
 ## 設計承認の自律判断（Autonomy Tier T2）
 
 **design_complete → approved の遷移を将軍が自律判断してよい条件:**
 
-1. Memory MCPに殿の好み・方針が記録されている
+1. `context/design/` の関連設計書に殿の方針が記録されている
 2. 設計がその方針に合致している（矛盾がない）
 3. 予算影響・外部サービス契約を伴わない
 4. セキュリティ重大判断を伴わない
 
 **手順:**
-1. `mcp__memory__read_graph` で殿の好み・方針を確認
+1. 上の対応表から関連する設計書を読む
 2. 設計書（context/sakusen_NNN.md 等）を読む
 3. 方針との整合性を検証
 4. 合致 → `status: approved` に更新し、家老に実装開始を指示
@@ -198,7 +227,7 @@ Lord: command → Shogun: write YAML → inbox_write → END TURN
 status: approved
 approved_by: shogun
 approved_at: "ISO8601"
-approval_note: "Memory MCP lord_preferences に合致。{具体的な根拠}"
+approval_note: "design/{ファイル名} の方針に合致。{具体的な根拠}"
 ```
 
 ```
@@ -396,12 +425,19 @@ Rules:
 
 ## Memory MCP
 
-Save when:
-- Lord expresses preferences → `add_observations`
-- Important decision made → `create_entities`
-- Problem solved → `add_observations`
-- Lord says "remember this" → `create_entities`
+**殿の方針・設計判断は `context/design/*.md` に書く。Memory MCP には運用ルールのみ。**
 
-Save: Lord's preferences, key decisions + reasons, cross-project insights, solved problems.
-Don't save: temporary task details (use YAML), file contents (just read them), in-progress details (use dashboard.md).
+Save to Memory MCP (運用ルールのみ):
+- エージェント運用に関する殿の好み（idle嫌い等）
+- クロスプロジェクトの運用方針
+- Lord says "remember this" → まず design/ に書けないか検討。運用ルールなら Memory MCP
+
+Save to `context/design/*.md` (設計判断):
+- Lord expresses preferences about the site → 該当する設計書を更新
+- Important design decision made → 既存ファイルを更新 or 新規作成
+- 新しい方針が決まった → 設計書に追記
+
+Don't save anywhere:
+- temporary task details (use YAML)
+- in-progress details (use dashboard.md)
 **残課題・将来改善はMemoryに入れるな** → `~/projects/TODO.md` にプロジェクト別で蓄積。

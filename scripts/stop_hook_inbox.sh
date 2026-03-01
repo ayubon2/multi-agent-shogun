@@ -78,7 +78,7 @@ if [ -n "$LAST_MSG" ]; then
     if [ -n "$NOTIFY_TYPE" ]; then
         case "$NOTIFY_TYPE" in
             error_report)
-                bash "$SCRIPT_DIR/scripts/notify_lord.sh" \
+                bash "$HOME/.claude/scripts/notify_lord.sh" \
                     "❌ ${AGENT_ID}: エラーで停止" 2>/dev/null &
                 ;;
         esac

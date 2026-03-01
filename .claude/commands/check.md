@@ -55,6 +55,7 @@
 | C3 | ディスク容量 | `df -h /Volumes/Manga02` 90%超 → ⚠️ | — |
 | C4 | inbox_watcher | `pgrep -f inbox_watcher` で生存確認 → 死んでたら 🔴 | watcher停止でinbox配送不能 |
 | C5 | chrome-ai-bridge | `pgrep -f chrome-ai-bridge` + 最新ログ確認 | EXT_READY_TIMEOUT連続 |
+| C6 | Dockerコンテナ | `docker ps --format '{{.Names}} {{.Status}}'` で期待コンテナ(komga等)の生存確認 → 停止/不在なら 🔴 | Komga停止に気づかず漫画閲覧不能 |
 
 #### D. 殿のアクション待ちチェック
 
