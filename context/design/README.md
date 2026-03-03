@@ -5,7 +5,7 @@
 > 作戦（sakusen_NNN）が「何をやるか」なら、設計書は「どうあるべきか」。
 > **Memory MCP の代替**: 殿の方針はここに書く。エージェントは必要時にこのディレクトリを読む。
 
-最終更新: 2026-03-01
+最終更新: 2026-03-02
 
 ## インデックス
 
@@ -36,6 +36,7 @@
 | [ranking_sources.md](ranking_sources.md) | 多角的ランキングデータソース | 2026-03-01 |
 | [data_policy.md](data_policy.md) | データソース方針（何を使い、何を使わないか） | 2026-03-01 |
 | [quality_standards.md](quality_standards.md) | 品質基準（画像・データ） | 2026-03-01 |
+| [isbn_authority.md](isbn_authority.md) | ISBN権威データ方針（優先度・巻数・電子/紙） | 2026-03-02 |
 
 ### 収益化・ローンチ
 

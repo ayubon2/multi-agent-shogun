@@ -1404,6 +1404,7 @@ commands:
   assigned_to: ashigaru4
   associate_tag: discoverperor-22
   result: "PASS。ISBN→ASIN変換実装(287K件)、ExternalLinks更新、discoverperor-22タグ、ビルド成功。ONE PIECE/ハイキュー動作確認済。"
+  completion_note: "AmazonアフィリエイトリンクPASS。ISBN→ASIN変換実装(287K件)・ExternalLinks更新・discoverperor-22タグ・ビルド成功。ONE PIECE/ハイキュー動作確認済。"
 - id: cmd_058
   timestamp: "2026-03-01T14:15:00+09:00"
   north_star: "discover.perory.comを漫画ファンの定番サイトに育てるため、将軍が戦略提案する際のネタ元となる「アイデアデータベース」を構築・継続更新する"
@@ -1540,6 +1541,8 @@ commands:
   project: discover_awards_fix
   priority: medium
   status: done
+  completed_at: "2026-03-01T23:12:24"
+  completion_note: "文化庁メディア芸術祭マンガ部門25回分データ追加（shinobi_g実施）。25件中24件マッチ。ヴィンランド・サガ2009年大賞紐付け確認OK。discover.db同期済み（WAL+busy_timeout）。"
 
 - id: cmd_062
   timestamp: "2026-03-01T19:00:00+09:00"
@@ -1602,6 +1605,7 @@ commands:
   status: done
   completed_at: "2026-03-01T23:17:20"
   result: "楽天★★★主軸（107K件・月次3000件・カバー画像）、NDL★★☆補完、BW★★☆メタ、OpenBD★☆☆検証用。context/design/newrelease_pipeline.md作成済み。"
+  completion_note: "新刊データソース調査完了。楽天主軸(107K件・月次3000件)・NDL補完・BW電子版メタ・OpenBD検証用。推奨パイプライン設計済み。context/design/newrelease_pipeline.md作成完了。"
 
 - id: cmd_061
   timestamp: "2026-03-01T18:30:00+09:00"
@@ -1661,3 +1665,997 @@ commands:
   project: madb_integration
   priority: medium
   status: in_progress
+
+- id: cmd_064
+  timestamp: "2026-03-02T02:30:00+09:00"
+  north_star: "ISBNの正しさを情報源の権威性で保証する。books.or.jpをground truthとし、読み出し時の優先度ソートでデータ汚染を構造的に排除する"
+  purpose: "ISBN権威データ基盤を設計・実証し、ONE PIECE 1巻問題と推しの子誤紐づけ問題の根本原因を特定・修正する"
+  acceptance_criteria:
+    - "ONE PIECEのdiscover.dbにおける現在のISBN・カバー画像の状態が診断され、なぜ57巻が選ばれたか根本原因が特定されている"
+    - "推しの子のdiscover.dbにおける外部DB紐づけ状態が診断され、何と誤紐づけされているか・なぜ繰り返すかの根本原因が特定されている"
+    - "books.or.jpのrobots.txt・検索パターン・スクレイピング可否が調査済み"
+    - "books.or.jpから ONE PIECE 1巻 と 推しの子 1巻 の正しいISBN（紙版・電子版）を取得し検証済み"
+    - "work_isbns テーブル設計（source, priority, volume, edition列を含む）が完成し、context/design/isbn_authority.md の概念設計と整合している"
+    - "ONE PIECE と推しの子の2作品で実証: 正しいISBNでカバー画像が1巻になることを確認"
+    - "既存のqueries.tsのISBN読み出しクエリが新テーブル対応に修正されている（または修正方針が明確）"
+  command: |
+    作戦009「権威 ISBN_AUTHORITY」— ISBN権威データ基盤構築。殿直接指示。最優先。
+
+    ## 背景（殿の問題提起）
+    1. ONE PIECEのカバー画像が57巻になっている。シリーズの顔は1巻であるべき
+    2. 推しの子が5回も別作品と誤紐づけされている。根本的なマッチング欠陥
+    3. 殿の方針: 情報源に優先度をつけ、読み出し時に最高優先度のISBNを返す構造にする
+
+    ## 設計書
+    context/design/isbn_authority.md（殿承認済み）を必ず読んでから着手せよ。
+
+    ## Phase 1: 診断（軍師担当推奨）
+    1. discover.db で ONE PIECE (work_id特定) の現在のISBN一覧を取得
+       - どのISBNが代表として使われているか
+       - そのISBNが何巻か
+       - なぜそれが選ばれたか（クエリのORDER BY等）
+    2. discover.db で 推しの子 の現在の外部ID紐づけ状態を取得
+       - external_ids の全レコード
+       - cover_url がどこを指しているか
+       - 誤紐づけの原因特定（タイトルマッチ? ISBN経由?）
+    3. 結果を report YAML に記載
+
+    ## Phase 2: books.or.jp 調査
+    1. https://www.books.or.jp/robots.txt を確認
+    2. 検索ページの構造を調査（検索URL、結果ページのHTML構造）
+    3. ONE PIECE 1巻（ISBN: 9784088725093 を確認）と推しの子 1巻のページを取得
+    4. 電子版と紙版の区別がどう表示されるか確認
+    5. スクレイピングスクリプトのプロトタイプ作成（レート制限遵守）
+
+    ## Phase 3: テーブル設計 + 実装
+    1. work_isbns テーブルを discover.db に作成（isbn_authority.md の設計に準拠）
+    2. ONE PIECE と推しの子の2作品で実データ投入
+    3. queries.ts の代表ISBN取得クエリを新テーブル対応に修正
+    4. ビルド確認 + 2作品のカバー画像が正しい1巻になっていることを確認
+
+    ## Phase 4: 既存データ移行方針
+    1. external_ids の既存ISBNを work_isbns に移行する方針策定（source='legacy', priority=4）
+    2. books.or.jp 全件スクレイピングの工数見積もり（118K works対象）
+    3. 段階的移行計画を報告
+
+    ## 注意
+    - 設計書 isbn_authority.md が正。迷ったら設計書に戻れ
+    - books.or.jp の画像は使わない（低画質）。ISBNデータのみ
+    - 既存のカバー収集BG（紀伊國屋/BW/集英社CF）は止めるな。並行して進めよ
+  project: isbn_authority
+  priority: critical
+  status: pending
+
+- id: cmd_065
+  timestamp: "2026-03-02T02:30:00+09:00"
+  north_star: "manga.perory.comは殿のプライベート漫画サーバー。殿がアクセスできないのは致命的"
+  purpose: "CF Access JWT検証エラーを修正し、殿がmanga.perory.comに正常アクセスできるようにする"
+  acceptance_criteria:
+    - "verifyAuth()関数のJWT検証ロジックが修正されている"
+    - "cf-access-jwt-assertion ヘッダーの取得・検証が正しく動作している"
+    - "ビルド成功"
+    - "localhost:3000 でCF Access認証なし環境でもエラーにならない（開発用フォールバック）"
+  command: |
+    manga.perory.com CF Access JWT検証エラー修正。
+
+    ## 症状
+    CF Access一本化後、殿がアクセスすると {error: Unauthorized} 表示。
+    CF Accessメール認証は通過済み（1回目エラー・2回目に通る場合あり）。
+
+    ## 推定原因
+    apps/private/src/lib/auth.ts の verifyAuth() が cf-access-jwt-assertion ヘッダーを正しく検証できていない。
+
+    ## 確認ポイント
+    1. ヘッダー名: cf-access-jwt-assertion（ハイフン区切り）が正しいか
+    2. JWKS取得: Cloudflare のJWKSエンドポイントからの公開鍵取得が動作しているか
+    3. JWT検証: aud（audience）の値がCF AccessのApplication Audience Tagと一致しているか
+    4. エラーハンドリング: 検証失敗時のフォールバックが適切か
+
+    ## 対象ファイル
+    ~/projects/012_manga-workspace/apps/private/src/lib/auth.ts
+    ~/projects/012_manga-workspace/apps/private/src/proxy.ts
+
+    ## 修正後
+    ビルド + launchctl再起動 + localhost確認
+  project: manga_private
+  priority: high
+  status: pending
+
+- id: cmd_066
+  timestamp: "2026-03-02T02:30:00+09:00"
+  north_star: "完了した作戦と進行中cmdの正確な記録がなければ、次の戦略判断が狂う"
+  purpose: "shogun_to_karo.yaml の完了済みcmd（status: complete/done）にcompleted_at/completion_noteを付与し、campaigns.mdを最新状態に更新する"
+  acceptance_criteria:
+    - "全完了cmdにcompleted_atフィールドが存在する"
+    - "全完了cmdにcompletion_noteフィールドが存在する"
+    - "campaigns.mdのステータスがYAMLと整合している"
+    - "campaigns.mdに作戦009「権威」が追加されている"
+  command: |
+    YAML衛生 + campaigns.md更新。
+
+    1. queue/shogun_to_karo.yaml の全 cmd を走査
+    2. status: complete/done のうち completed_at が欠けているものに追記
+    3. campaigns.md を更新:
+       - 作戦008の最新成果を反映
+       - 作戦009「権威 ISBN_AUTHORITY」を追加（cmd_064、🟢進行中）
+    4. BGプロセス（紀伊國屋/BW/集英社CF/楽天）の生存確認も実施し、dashboardに反映
+  project: system_maintenance
+  priority: medium
+  status: pending
+
+- id: cmd_067
+  timestamp: "2026-03-02T02:45:00+09:00"
+  north_star: "Amazon PA-APIは最高品質のカバー画像と商品データへの道。適格販売3件達成がPA-API取得の前提条件。サイトからの購入導線を最大化する"
+  purpose: "discover.perory.comのトップページにAmazon Kindleストアへのアフィリエイトリンクバナーを設置し、適格販売を促進する"
+  acceptance_criteria:
+    - "discover.perory.com トップページ（/ja/ および /en/）にAmazon Mangaストアへのバナーリンクが表示されている"
+    - "リンク先が https://amzn.to/4aY0HUa（殿提供のAmazon Mangaストアリンク、tag=discoverperor-22）"
+    - "デザインがサイトのトーンに合っている（浮いていない）"
+    - "バナーは一時的な施策であることがコード上明確（コメント or フラグ管理で将来削除容易）"
+    - "ビルド成功 + discover.perory.com で表示確認"
+  command: |
+    discover.perory.com トップにAmazonアフィリエイトバナー設置。殿直接指示。
+
+    ## 背景
+    Amazon PA-API取得には適格販売3件が必要。殿がアソシエイト申請済み（tag: discoverperor-22）。
+    サイト訪問者をAmazon購入に導き、適格販売を早期達成するのが目的。
+
+    ## リンク
+    https://amzn.to/4aY0HUa
+    → Amazon Mangaストア（漫画専用カテゴリ、tag=discoverperor-22 付き）
+    ※殿が差し替え指示。Kindleストアより漫画に特化したページ
+
+    ## 実装方針
+    1. トップページ（apps/public/src/app/[locale]/page.tsx 付近）にバナーコンポーネント追加
+    2. デザイン: サイトに馴染むカード or バナー。「Amazonで漫画を探す →」的なCTA
+    3. rel="nofollow sponsored" を付与（SEOルール）
+    4. コード上、一時的施策であることを明示（// TEMPORARY: Amazon affiliate banner for PA-API qualification）
+    5. PA-API取得後は高品質カバー画像に切り替え、バナーは削除予定
+
+    ## 対象リポ
+    ~/projects/012_manga-workspace/apps/public/
+
+    ## 注意
+    - 既存のwork-card.tsxのAmazonリンクボタンはそのまま維持（別の導線）
+    - バナーはトップページのみ。他ページには不要
+  project: manga_discover
+  priority: high
+  status: pending
+
+- id: cmd_068
+  timestamp: "2026-03-02T03:00:00+09:00"
+  north_star: "おすすめ漫画は新規訪問者の第一接点。ランキング上位からAmazonへの購入導線があれば、適格販売とアフィリエイト収益の両方を最大化できる"
+  purpose: "discover.perory.comのトップページ おすすめ漫画トップ10にAmazonアフィリエイトリンクを追加する"
+  acceptance_criteria:
+    - "トップページのおすすめ/人気ランキング上位10作品にAmazonリンクが表示されている"
+    - "リンクはtag=discoverperor-22付きのAmazon検索 or 商品ページへのリンク"
+    - "デザインがWorkCardまたはランキングリストに自然に統合されている"
+    - "rel=nofollow sponsored が付与されている"
+    - "ビルド成功 + discover.perory.com で表示確認"
+  command: |
+    discover.perory.com トップページのおすすめ漫画トップ10にAmazonリンク追加。殿直接指示。
+
+    ## 背景
+    トップページに表示されるおすすめ/人気漫画のトップ10にAmazonへの購入リンクを貼る。
+    適格販売促進 + ユーザーの利便性向上の一石二鳥。
+
+    ## 実装方針
+    1. トップページのランキング/おすすめセクション（WorkCardで表示されている箇所）を確認
+    2. 各WorkCardまたはランキングアイテムにAmazonリンクボタンを追加
+       - 既にwork-card.tsxにAmazonリンク機能がある場合はそれを活用
+       - なければ、ISBNからAmazon検索URLを生成（https://www.amazon.co.jp/s?k={isbn}&tag=discoverperor-22）
+    3. リンクはrel="nofollow sponsored"付き
+    4. cmd_067のKindleバナーとは別の導線（作品個別のリンク）
+
+    ## 確認ポイント
+    - work-card.tsx に既にAmazonリンク実装があるか確認（cmd_057で実装済みの可能性）
+    - ある場合はトップページのWorkCardでも表示されるよう確認するだけで済む可能性あり
+    - ない場合は追加実装
+
+    ## 対象リポ
+    ~/projects/012_manga-workspace/apps/public/
+  project: manga_discover
+  priority: high
+  status: pending
+
+- id: cmd_069
+  timestamp: "2026-03-02T09:00:00+09:00"
+  north_star: "殿が実機で確認したバグは即日修正。表示崩れはサイトの信頼性を直接損なう"
+  purpose: "殿の実機レビューで発見されたバグ4件を即修正し、discover.perory.comの基本品質を担保する"
+  acceptance_criteria:
+    - "人気ランキングTop100ページにカバー画像が表示されている"
+    - "全作品ページのタグ絞り込みが日本語タグで表示されている"
+    - "タグ絞り込みがマウスクリックのみで動作し、Enterキー不要"
+    - "新着ページが発行日順（登録日順ではない）でソートされている"
+    - "ビルド成功 + discover.perory.com で4件全て確認"
+  command: |
+    殿の実機レビューバグ修正4件。殿直接指示。最優先。
+
+    設計書: context/design/ux_feedback_20260302.md のセクションA（バグ・即修正）を必ず読め。
+
+    ## A1: 人気ランキングTop100に画像が出ない
+    - /rankings/ ページのクエリを確認。cover_url がSELECTに含まれていない可能性
+    - queries.ts の該当クエリを修正（cmd_063で全13クエリ修正済みのはずだが漏れチェック）
+
+    ## A2: タグ絞り込みが英語のまま
+    - /works/ の全作品ページでタグフィルタが英語表示
+    - work_tags テーブルのタグ名が英語（AniList由来）の可能性
+    - 日本語タグへの変換or表示用マッピングが必要
+    - data_policy.md: AniListタグは「そのまま表示しない」方針
+
+    ## A3: Enterを押さないと反映しない
+    - タグ絞り込みのUI。クリックで即反映、Enter不要に
+    - ux_principles.md: 「Enter不要。即時反映。余計なステップを挟まない」
+
+    ## A4: 新着が登録日順→発行日順
+    - /new/ ページのORDER BY を確認
+    - created_at ではなく publication_date（または相当カラム）でソート
+
+    ## 対象リポ
+    ~/projects/012_manga-workspace/apps/public/
+  project: manga_discover
+  priority: critical
+  status: pending
+
+- id: cmd_070
+  timestamp: "2026-03-02T09:00:00+09:00"
+  north_star: "マウスだけでクリック少なく知りたい情報に辿り着けるのがUX。殿のUX哲学を形にする"
+  purpose: "殿指摘のUX改善9件を実装し、discover.perory.comの操作性を大幅に向上させる"
+  acceptance_criteria:
+    - "読書ステータスが未読/読みたい/読んでるに変更されている（連載中の読了問題解消）"
+    - "AND条件タグをクリックで解除できる"
+    - "絞り込みUIが目立つ位置に配置されている"
+    - "分子/分母表示（例: 1,234 / 118,329）で絞り込み件数が分かる"
+    - "anilist表示が消えている（スコアランキング等の情報源表示なし）"
+    - "探索ボタンが削除されている（ナビ整理）"
+    - "カード内の文字行間が狭くなり3行弱が見える"
+    - "重複UIが解消されている"
+    - "星評価UIが追加されている（ワンクリックで評価可能）"
+    - "ビルド成功 + 各改善項目の動作確認"
+  command: |
+    UX改善9件一括実装。殿直接指示。
+
+    設計書: context/design/ux_feedback_20260302.md のセクションB（UX改善）を必ず読め。
+    UX方針: context/design/ux_principles.md も参照。
+
+    ## B1: 読書ステータス改善
+    - 連載中作品の「読了」は意味がない
+    - 変更: 未読 / 読みたい / 読んでる（言葉は自然な日本語で）
+    - 本棚追加なしでワンクリック記録
+
+    ## B2: 星評価（簡易）
+    - 星アイコンをポチッと押せるUI
+    - 将来「みんなの評価」集計に使う
+
+    ## B3: 文字の隙間を狭く
+    - WorkCardのdescription部分の行間・余白を縮小
+    - 3行弱が見えるように調整
+
+    ## B4: AND条件タグをクリックで解除
+    - 選択中のタグ表示をクリック→外れる（×ボタン or クリック）
+
+    ## B5: 絞り込みを目立つように
+    - 全作品ページの絞り込みが見つけにくい → 視覚的に強調
+
+    ## B6: 重複UI解消
+    - 追加ボタン横と右上に同じ機能 → 片方削除
+
+    ## B7: 分子/分母表示
+    - 「1,234 / 118,329 作品」のように表示
+    - 絞り込むたびにリアルタイムで変動
+
+    ## B8: anilist表示やめる
+    - スコアランキング等で「anilist」と書かない
+    - 情報源は裏方に隠す
+
+    ## B9: 探索ボタン削除
+    - ナビから「探索」削除（作品一覧と重複のため）
+
+    ## 対象リポ
+    ~/projects/012_manga-workspace/apps/public/
+  project: manga_discover
+  priority: high
+  status: pending
+
+- id: cmd_071
+  timestamp: "2026-03-02T09:00:00+09:00"
+  north_star: "好き嫌いをどんどん入力させ、推し済み/未推しの流れを作ることがサイトの核心的価値"
+  purpose: "受賞フィルタ・多観点レコメンド・好き嫌い入力UIなど新機能4件を設計・実装する"
+  acceptance_criteria:
+    - "受賞作品ページで賞別フィルタが使える（複数選択可）"
+    - "今日の発見がanilist70点以上ではなく、多観点レコメンド形式になっている"
+    - "おすすめボタンで年代別等のパーソナルフィルタが使える"
+    - "好き嫌い入力UI（スワイプ or クリック）が常設されている"
+    - "人気ランキングとスコアランキングの違いがユーザーに明確"
+    - "ビルド成功 + 動作確認"
+  command: |
+    新機能4件 + 情報設計。殿直接指示。
+
+    設計書: context/design/ux_feedback_20260302.md のセクションC（新機能）とD（情報設計）を必ず読め。
+
+    ## C1: 受賞作品の賞別フィルタ
+    - /awards/ で何の賞か選べるようにする
+    - 人気順以外は複数選択可
+    - work_awards テーブルの award_name でフィルタ
+
+    ## C2: おすすめボタン
+    - 年代×おすすめ等のフィルタ
+    - 「2000年代のおすすめ」が調べられる
+    - 既存のsimilar_worksデータを活用
+
+    ## C3: 今日の発見をAmazon風多観点レコメンドに
+    - anilist70点以上をやめる
+    - 複数の観点（受賞歴、人気度、ジャンル等）から1個ずつランダム提示
+    - Amazon Mangaストアのおすすめリスト方式を参考に
+
+    ## C4: 好き嫌い入力の本格化
+    - オンボーディング（alu.jp型）の拡張版を常設
+    - Reactスワイプ or クリックで推し/スキップ
+    - 推し済みの修正 + 未推しをどんどん推していく流れ
+    - これがサイトの核心機能
+
+    ## D1: 人気ランキングとスコアの違い明確化
+    - ユーザーに分かるようにラベル・説明を追加
+
+    ## 対象リポ
+    ~/projects/012_manga-workspace/apps/public/
+  project: manga_discover
+  priority: high
+  status: pending
+
+- id: cmd_072
+  type: top_page_redesign
+  title: トップページ戦略改善
+  description: |
+    殿のフィードバックに基づくトップページ改善。
+
+    ## 短期目標（即時）
+    1. Amazonリンクを増やす → 適格販売3件獲得が最優先
+       - 受賞作品のAmazonリンクでもOK
+       - 購入導線を最大化
+    2. 「探し方の入り口」が探しやすくない → 改善必須
+
+    ## コンテンツ方向性
+    - 受賞作品だけでは弱い（AI関係ない）
+    - **未読了のおすすめ**を載せていく
+    - 「AIで、DNAで」というコンセプトにぴったりのコンテンツを設計
+    - 複数観点からのおすすめ表示（Amazon風）
+
+    ## 中長期ビジョン（設計だけ）
+    - UserLocal等で初回訪問者の年齢等を推定
+    - 推定情報に基づいて自動おすすめ
+    - 機械学習でパーソナライズ精度を上げていく
+
+    ## 実装優先度
+    1. Amazonリンク増設（受賞作品+おすすめにリンク付与）
+    2. トップページのコンテンツ構成見直し
+    3. 「AIで、DNAで」コンセプト反映
+
+    ## 対象リポ
+    ~/projects/012_manga-workspace/apps/public/
+  project: manga_discover
+  priority: high
+  status: pending
+
+- id: cmd_073
+  type: logo_design
+  title: manga discoverロゴ設計
+  description: |
+    殿指示: nanobananaでロゴを作成する。コンセプトとプロンプトを用意せよ。
+
+    ## サイトコンセプト
+    - AIで漫画のDNAを解析し、好みに合った作品を発見するサービス
+    - 「AIで、DNAで」がキャッチコピー
+    - 118,000+作品のデータベース
+    - パーソナライズされたレコメンド
+
+    ## ロゴ要件
+    - サービス名: manga discover（またはManga Discover）
+    - テイスト: モダン、テック感、でも漫画の温かみも
+    - 用途: Webヘッダー、favicon、OGP画像
+    - 背景: ダーク/ライトモード両対応
+
+    ## 出力（gunshiに依頼）
+    1. コンセプト案 3つ（各案の方向性説明）
+    2. 各案のnanobanana用プロンプト（英語）
+    3. カラーパレット提案
+    4. 推奨サイズ・フォーマット
+
+    ## 参考
+    - 現サイト: discover.perory.com
+    - DNAヘリックスとAIのモチーフが候補
+  project: manga_discover
+  priority: medium
+  status: pending
+
+- id: cmd_074
+  type: data_quality_verification
+  title: 巻数データ全件検証 + 曖昧フラグ導入
+  description: |
+    殿の指摘: 進撃の巨人が2巻表示（正しくは34巻）。NARUTOも20巻（正しくは72巻）。
+    データ品質に重大な問題がある。
+
+    ## Phase 1: 即時修正（足軽1名）
+    進撃の巨人(id=77346): total_volumes=34
+    NARUTO(id=77361): total_volumes=72
+    呪術廻戦(id=77350): total_volumes=27 (status=FINISHEDも)
+    DB: ~/projects/009_manga-discover/data/db/discover.db
+
+    ## Phase 2: DB拡張 — 曖昧フラグ（足軽1名）
+    worksテーブルに以下カラム追加:
+    - data_confidence TEXT DEFAULT 'unverified'
+      -- 値: 'verified'(殿確認済), 'auto_verified'(自動検証合格), 'suspicious'(要確認), 'unverified'(未検証)
+    - volume_source TEXT DEFAULT ''
+      -- 巻数の情報元: 'anilist', 'mal', 'books_or_jp', 'manual', etc.
+    - verified_at TIMESTAMP
+    - verified_by TEXT  -- 'lord', 'auto_qc', etc.
+
+    ## Phase 3: 自動検証ロジック（gunshi設計 → 足軽実装）
+    人気作品（anilist_popularity > 10000）の巻数を外部ソース（AniList API, books.or.jp等）と照合。
+    不一致があれば data_confidence = 'suspicious' にマーク。
+    一致すれば data_confidence = 'auto_verified'。
+
+    ## Phase 4: 全件バッチ検証
+    Batch Processing Protocol 準拠。batch1でQC → 全件実行。
+    対象: anilist_popularity > 10000 の作品（推定2000-3000件）から開始。
+
+    ## 検証ルール
+    - AniList APIで取得した volumes と比較
+    - 差分 > 20% かつ AniList値 > 5 なら suspicious
+    - AniList値がNULLの場合、books.or.jpフォールバック
+    - 巻数が1または2で、anilist_popularityが高い（>50000）作品は自動suspicious
+
+    ## 対象リポ
+    ~/projects/012_manga-workspace/apps/public/
+    ~/projects/009_manga-discover/
+  project: manga_discover
+  priority: critical
+  status: pending
+
+- id: cmd_075
+  type: admin_review_ui
+  title: データ品質管理画面（殿レビュー用）
+  description: |
+    殿指示: 曖昧なデータの比較・承認UIを作成。private側でもpublic側でもよい。
+    殿が案や比較を見て判断していく流れ。
+
+    ## 要件
+    1. suspicious/unverifiedなデータを一覧表示
+    2. 各項目について:
+       - 現在のDB値
+       - 外部ソース（AniList, books.or.jp等）の値
+       - 差分のハイライト
+    3. 殿のアクション:
+       - 「承認」→ verified に更新
+       - 「修正」→ 正しい値を入力して更新
+       - 「スキップ」→ 後で判断
+    4. フィルタ: confidence別、人気度別、データ種別（巻数/タイトル/ISBN等）
+    5. 統計ダッシュボード: verified率、suspicious件数、未検証件数
+
+    ## 実装方針
+    - ~/projects/012_manga-workspace/apps/private/ に管理ページとして追加
+    - または ~/projects/012_manga-workspace/apps/public/ に /admin ルートで追加（CF Access認証済みなのでOK）
+    - シンプルなテーブルUI + インライン編集
+    - bulk操作（一括承認）も可能に
+
+    ## Phase 1（MVP）
+    - suspicious な巻数データの一覧 + 比較 + 承認/修正
+    - フィルタ: confidence, popularity順
+
+    ## Phase 2（拡張）
+    - ISBN、カバー画像、タイトル等の他フィールドにも拡張
+    - 自動QC結果のダッシュボード
+    - 変更履歴
+
+    ## 対象リポ
+    ~/projects/012_manga-workspace/
+  project: manga_discover
+  priority: high
+  status: pending
+
+- id: cmd_076
+  type: tag_system_implementation
+  title: メインタグ/サブタグ2層構造の実装
+  description: |
+    設計書: context/design/tag_system.md（確定済み）
+    殿指示: 大きなタグとバックグラウンドのタグ構造を実装せよ。
+
+    ## 設計概要（tag_system.md参照）
+    - メインタグ（3-5個/作品）: ユーザーに表示。検索・フィルタ・作品ページで使用
+    - サブタグ（10-20個/作品）: 非表示。類似度計算・レコメンドエンジン用
+
+    ## Phase 1: DBスキーマ（足軽1名）
+    discover.db に以下テーブル追加:
+    ```sql
+    CREATE TABLE tags (
+      id INTEGER PRIMARY KEY,
+      name TEXT NOT NULL UNIQUE,      -- 日本語タグ名
+      layer TEXT NOT NULL,             -- ジャンル/舞台/設定/テーマ/職業/関係性/キャラ属性/生物/読み味/表現形式
+      anilist_mapping TEXT DEFAULT '', -- 対応するAniListタグ（カンマ区切り）
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE work_tags (
+      work_id INTEGER NOT NULL,
+      tag_id INTEGER NOT NULL,
+      tag_type TEXT NOT NULL CHECK(tag_type IN ('main', 'sub')),
+      source TEXT DEFAULT '',          -- bookwalker/anilist_map/llm/manual
+      confidence REAL DEFAULT 0.5,     -- 0.0-1.0
+      PRIMARY KEY (work_id, tag_id),
+      FOREIGN KEY (work_id) REFERENCES works(id),
+      FOREIGN KEY (tag_id) REFERENCES tags(id)
+    );
+    ```
+
+    ## Phase 2: タグマスター投入（足軽1名）
+    tag_system.md の10層・約225タグをtagsテーブルに投入。
+    既存のAniList→日本語マッピング（155/387完了分）を反映。
+
+    ## Phase 3: 既存タグの移行（足軽1名）
+    現在worksテーブルにあるタグデータをwork_tagsに移行。
+    - 現在の英語タグ → 日本語マッピング → main/sub分類
+    - BookWalkerから取得済みのジャンル情報 → メインタグ
+    - AniListタグ → サブタグ（マッピング経由）
+
+    ## Phase 4: UI反映（足軽1名）
+    - 作品ページ: メインタグのみ表示（クリックで絞り込み）
+    - 絞り込みUI: メインタグのみ選択可能
+    - サブタグはAPIレスポンスに含めるがUI非表示
+    - 全タグ日本語で表示（tag_system.md の方針）
+
+    ## Phase 5: タグパイプライン（自動更新）
+    - 日次: BookWalkerジャンル → メインタグ
+    - 週次: AniListマッピング → Wikipedia → LLMサブタグ推定
+    - 月次: トレンドレビュー、低使用タグ統合
+
+    ## 対象設計書
+    context/design/tag_system.md（必ず読んでから実装）
+
+    ## 対象リポ
+    ~/projects/012_manga-workspace/apps/public/
+    ~/projects/009_manga-discover/
+  project: manga_discover
+  priority: high
+  status: pending
+
+- id: cmd_082
+  timestamp: "2026-03-03T10:30:00+09:00"
+  north_star: "あらすじ0%・タグUI未完成・アニメシーズン未実装という3大コンテンツ空白を一気に埋め、SEO評価とユーザー滞在時間を飛躍させる"
+  purpose: "discover.perory.comのコンテンツ深度を大幅に強化し、薄いページを実質的なコンテンツページに変える"
+  acceptance_criteria:
+    - "BW Phase B: description取得率が50%以上に到達（0%→目標60-70%）"
+    - "S-007: /anime/[year]/[season]/ ページが4シーズン×直近5年分以上でHTTP 200"
+    - "タグUI: WorkCardおよび作品詳細ページにメインタグがバッジ表示されている"
+    - "タグフィルタ: /search でタグによる絞り込みが動作する"
+    - "全変更がビルド成功・本番反映済み"
+  command: |
+    ## コンテンツ深化三本柱（並行実行）
+
+    ### 柱1: BW Phase B — あらすじ取得（最重要・T2承認済み）
+    subtask_226で収集済みのBW UUID → 商品ページGET → JSON-LDからdescription/genre/tags/rating取得。
+    bw_metadata.db に保存済みのUUIDデータを使い、discover.dbのdescriptionカラムを更新。
+    - 設計書: subtask_182のBW設計書参照
+    - Phase Aで収集済みUUID活用。新規スクレイピングではなく既存データのマージ中心。
+    - description 0% → 60-70%が目標
+    - batch1でQC → 残りバッチの順（Batch Processing Protocol準拠）
+
+    ### 柱2: S-007 アニメシーズンページ
+    subtask_220でAniListからair_year/season収穫済み（2,167件、95.1%にair_year付与）。
+    /anime/[year]/[season]/ ページを実装。
+    - 例: /anime/2025/spring/, /anime/2024/fall/
+    - S-001/S-003パターン踏襲（SSG/OG/Pagination/i18n/sitemap）
+    - nav + /anime/ indexページにシーズンリンク追加
+    - 設計参考: 既存の /anime/ ページ、/demographics/[name]/ パターン
+
+    ### 柱3: タグUI完成（Phase 4）
+    tags_new(92件) + work_tags_new(4,872件) は投入済み。UIに反映する。
+    - WorkCard: メインタグをバッジ表示（最大3個）
+    - 作品詳細ページ: メインタグ全表示 + クリックで検索絞り込み
+    - /search: タグフィルタ追加（既存のpublisher/label/authorフィルタと同列）
+    - 設計書: context/design/tag_system.md（必読）
+    - tags_newテーブルを使用（旧tagsではない）
+
+    ### 定期記録
+    5タスク完了ごとに記録タスクを1本入れること。
+
+    ## 対象リポ
+    ~/projects/012_manga-workspace/apps/public/
+    ~/projects/009_manga-discover/
+  project: manga_discover
+  priority: critical
+  status: complete
+  completed_at: "2026-03-03T03:44:57"
+  completion_note: "三本柱全完了: BW 1,681件description取得(100%)・S-007 430ページSSG・タグUI 9グリッドページ+検索フィルター。全URL HTTP200確認済み。"
+
+- id: cmd_083
+  timestamp: "2026-03-03T07:10:00+09:00"
+  north_star: "サイト表示速度を体感レベルで高速化し、タグ自動付与でコンテンツの発見性を飛躍させ、あらすじカバレッジを継続拡大する"
+  purpose: "LCPを3秒以下に改善し、タグ自動パイプラインでwork_tags_newを大幅拡充し、BW拡張クロールでdescriptionカバレッジを伸ばす"
+  status: complete
+  started_at: "2026-03-03T07:20:00"
+  completed_at: "2026-03-03T09:10:00"
+  completion_note: "柱1 LCP 13.98s→2.9s(PASS), 柱2 work_tags_new 4,872→58,624件(PASS), 柱3 BW BGプロセス(com.perory.bw-bg-pipeline)起動・UUID 1,896件・desc 1,898件(PASS)"
+  acceptance_criteria:
+    - "LCP: Lighthouse計測でLCP 3.5秒以下を達成（現状4.7秒）"
+    - "タグ自動付与: work_tags_newのレコード数が現在の4,872件から10,000件以上に増加"
+    - "BW拡張: BGプロセスが起動し、新規UUID取得+description取得パイプラインが稼働している"
+    - "全変更がビルド成功・本番反映済み・既存ページに退行なし"
+  command: |
+    ## 三本柱（並行実行）
+
+    ### 柱1: パフォーマンス最適化（LCP 4.7s → 3.5s以下）
+    現状: LCP 4.7秒（cmd_049で5s達成済み）。さらに高速化する。
+    - Lighthouse計測で現状のボトルネック特定
+    - next/image の sizes 属性最適化（過剰なダウンロード防止）
+    - SSRキャッシュ戦略: 人気ページの revalidate 設定（ISR的アプローチ）
+    - フォントサブセット化（Noto Sans JP → 必要文字のみ woff2）
+    - 不要なクライアントJSバンドル削減
+    - Cloudflare Images（remotePatterns）は既に設定済みかもしれないので確認から
+
+    ### 柱2: タグ自動マッピングパイプライン
+    設計書: context/design/tag_system.md
+    BW Phase Bで取得したgenre情報 → tags_new（92件）への自動マッピング。
+    - bw_harvest テーブルの genre/tags フィールドを分析
+    - BW genre → tags_new の日本語タグへのマッピングテーブル作成
+    - マッピング実行: work_tags_new に自動挿入（tag_type='main'/'sub', source='bookwalker'）
+    - 既存AniListタグ（英語）→ tags_new マッピングも実行
+    - discover.db の existing タグデータ活用（works.tags カラム等）
+    - 目標: work_tags_new 4,872件 → 10,000件以上
+
+    ### 柱3: BW拡張クロール（BGプロセス化）
+    cmd_082で1,681件のUUIDからdescriptionを取得した。
+    しかし118K作品のうちBW UUIDが付いているのは一部のみ。
+    - discover.dbの作品タイトルでBW検索 → UUID新規取得
+    - 取得したUUID → JSON-LD → description/genre/tags マージ
+    - BGプロセスとして起動（collect_bookwalker_covers.py と同様の構造）
+    - Batch Processing Protocol準拠: batch1（100件）→ QCゲート → フルバッチ
+    - robots.txt尊重、適切なsleep間隔
+
+    ### 定期記録
+    5タスク完了ごとに記録タスクを1本入れること。
+
+    ## 対象リポ
+    ~/projects/012_manga-workspace/apps/public/
+    ~/projects/009_manga-discover/
+  project: manga_discover
+  priority: critical
+  status: pending
+
+- id: cmd_084
+  timestamp: "2026-03-03T07:55:00+09:00"
+  north_star: "118K作品DBにMADBの豊富なメタデータを統合し、定期記録で成果を確実に残し、カバー画像率を継続向上させる"
+  purpose: "MADB 133K件のメタデータ統合でDB品質を底上げし、cmd_082-083の成果を記録し、カバー画像BGプロセスの状態を整備する"
+  acceptance_criteria:
+    - "MADB統合: cm104データからdiscover.dbへメタデータ差分マージが完了し、マージ件数を報告"
+    - "定期記録: setup-log・CHANGELOG・TODO・campaigns.mdが最新に更新されている"
+    - "カバー: 現在のcover_url件数と率を計測し、BGプロセス稼働状態を確認・整備"
+    - "ヘルスチェック: 全主要URL HTTP 200確認、退行なし"
+  command: |
+    ## cmd_083と並行実行（空き足軽4名を活用）
+
+    ### タスク1: MADB cm104 メタデータ統合
+    cmd_061で分析済み: github.com/ayubon2/dataset の cm104=133K件がメインデータセット。
+    設計書: context/design/madb_dataset.md
+    - cm104のCSV/JSONを読み込み、discover.dbの既存worksとmanga_codeでマッチング
+    - 差分のあるフィールド（author, publisher, publication_year等）をマージ
+    - マッチしないレコードは新規追加候補としてリスト化（追加は別判断）
+    - batch1: 1000件でテスト → 件数・マッチ率・更新フィールド数を報告
+    - batch1 OK → フルバッチ実行
+
+    ### タスク2: 定期記録（cmd_082-083の成果）
+    - ~/projects/001_mac-infra-setup/setup-log-2026-03-03.md に本日の作業ログ
+    - ~/projects/CHANGELOG.md にcmd_082完了記録
+    - ~/projects/TODO.md を最新に更新
+    - projects/campaigns.md を最新に更新
+
+    ### タスク3: カバー画像BGプロセス整備
+    - discover.dbの現在のcover_url件数と率を計測
+    - BGプロセス（紀伊國屋/BW/楽天）の生存確認
+    - 停止プロセスがあれば再起動（WAL mode + busy_timeout確認）
+    - 楽天launchd最新実行結果を確認
+
+    ### タスク4: サイト総合ヘルスチェック
+    - 全主要URL HTTP 200確認
+    - /api エンドポイント全件レスポンス確認
+    - cmd_082新ページの動作確認
+    - 問題があれば即修正
+
+    ## 対象リポ
+    ~/projects/012_manga-workspace/apps/public/
+    ~/projects/009_manga-discover/
+    ~/projects/002_manga-system/
+  project: manga_discover
+  priority: high
+  status: complete
+  started_at: "2026-03-03T09:27:00"
+  completed_at: "2026-03-03T09:50:00"
+  completion_note: "全4タスク完了: MADB+2261件補完, 定期記録, カバーBGプロセス確認(47.17%), ヘルスチェックPASS"
+
+- id: cmd_085
+  timestamp: "2026-03-03T09:55:00+09:00"
+  north_star: "殿の直接指摘に基づくUX改善。カバーなし作品の非表示、成人コンテンツ制御、WorkCardの情報整理、カバー画像品質修正により、サイトの見栄えと使い勝手を劇的に向上させる"
+  purpose: "殿指摘の5項目を全て修正し、discover.perory.comのUXを殿が納得する品質に仕上げる"
+  acceptance_criteria:
+    - "カバーなし作品がグリッド/リスト表示から除外されている（API側でcover_url IS NOT NULLフィルタ）"
+    - "ユーザー設定に成人コンテンツ表示切替が実装されている（非表示/表示/成人のみ の3択）"
+    - "WorkCardからアニメ化バッジが除去され、右上の'manga'ラベルがdemographic（少年/少女/青年/女性等）に置き換わっている"
+    - "Amazon・楽天・BookWalkerの全アフィリエイトリンクにタグが正しく入っていることを確認・報告"
+    - "推しの子・キングダム・ONE PIECEのカバー画像が正しい1巻表紙になっている"
+  command: |
+    ## 殿直接指摘 — 5項目（最優先・全て実装）
+
+    ### 1. カバーなし作品を非表示
+    cover_urlがNULLまたは空の作品をグリッド/リスト表示から除外する。
+    - API側: queries.ts の全クエリに `WHERE cover_url IS NOT NULL AND cover_url != ''` を追加
+    - 検索API: /api/works にも同条件追加
+    - ランキング/新着/おすすめ等すべてのリスト系表示に適用
+    - 作品詳細ページ（/works/[id]）はURLアクセスなので非表示にしない（fallback画像表示）
+    - 件数表示（「118,000+作品」等）はcover_urlありの件数に変更
+
+    ### 2. 成人コンテンツ表示設定（ユーザー設定）
+    demographic='成人'またはタグに成人関連を含む作品の表示制御。
+    - ユーザー設定ページ（/settings 新設 or /mylist内）に3択トグル:
+      - 「非表示」（デフォルト）: 成人作品を全リストから除外
+      - 「表示」: 全作品を表示
+      - 「成人のみ」: 成人作品だけを表示
+    - localStorage保存（認証不要で動作）
+    - API側: パラメータ ?adult=hide|show|only で制御
+    - discover.dbのworksテーブルで成人判定に使えるフィールドを確認（demographic, tags等）
+
+    ### 3. WorkCardリデザイン
+    - **削除**: アニメ化バッジ（「📺アニメ化」）を除去。情報過多のため。
+    - **変更**: 右上の「manga」ラベル → demographic値に変更（少年/少女/青年/女性/子供/成人）
+      - demographicがNULLの場合はラベル非表示
+      - 色分け推奨: 少年=青, 少女=ピンク, 青年=緑, 女性=紫, 成人=赤
+
+    ### 4. アフィリエイトリンク全数確認
+    全ページのAmazon/楽天/BookWalkerリンクを確認し報告:
+    - Amazon: discoverperor-22 タグが付いているか
+    - 楽天: AFFILIATE_IDが入っているか
+    - BookWalker: LinkSwitch (vc_pid=892558672) が動作しているか
+    - 確認結果をreport YAMLに詳細記載
+
+    ### 5. カバー画像修正（軍師に割り当て）
+    殿が繰り返し指摘: 推しの子・キングダム・ONE PIECEのカバーが違う。
+    - 根本原因を特定（ISBN選択ロジック？収集ソースの問題？キャッシュ？）
+    - 正しい1巻表紙のURLを特定し、discover.dbを直接修正
+    - 修正後にビルド→本番確認
+    - work_id: 推しの子=189530, キングダム/ONE PIECEはDBで確認
+    - 再発防止策も報告に含めること
+
+    ## 対象リポ
+    ~/projects/012_manga-workspace/apps/public/
+    ~/projects/009_manga-discover/
+  project: manga_discover
+  priority: critical
+  status: complete
+  started_at: "2026-03-03T09:55:00"
+  completed_at: "2026-03-03T10:15:00"
+  completion_note: "全5項目完了: カバーなし非表示, 成人コンテンツ3択, WorkCardリデザイン, アフィリエイト確認・修正, カバー画像修正(3作品)"
+
+- id: cmd_086
+  timestamp: "2026-03-03T10:30:00+09:00"
+  north_star: "アフィリエイト収益機会の最大化。一覧ページには楽天リンクがあるのに詳細ページにないのは機会損失。全購入導線を統一する"
+  purpose: "作品詳細ページ（external-links.tsx）に楽天アフィリエイトリンクを追加し、一覧ページと同等の購入導線を確保する"
+  acceptance_criteria:
+    - "external-links.tsx に楽天ブックスへのアフィリエイトリンクが表示されている"
+    - "楽天リンクにAFFILIATE_IDが正しく含まれている"
+    - "work-card.tsx の楽天リンク実装と同等のロジック（ISBNまたはタイトル検索）が使われている"
+    - "npm run build が成功する"
+    - "本番デプロイ後、作品詳細ページで楽天リンクが機能する"
+  command: |
+    作品詳細ページ（external-links.tsx）に楽天アフィリエイトリンクを追加。
+
+    cmd_085dでashigaru4が発見: work-card.tsx（一覧）には楽天リンクがあるが、
+    external-links.tsx（詳細ページ）には未実装。
+
+    実装方針:
+    - work-card.tsx の楽天リンク生成ロジックを参考に、external-links.tsxにも同様のリンクを追加
+    - Amazon・BookWalkerと並列に楽天ブックスリンクを表示
+    - AFFILIATE_IDの取得方法はwork-card.tsxに合わせる
+    - デプロイして本番確認まで実施
+
+    対象リポ:
+    ~/projects/012_manga-workspace/apps/public/
+  project: manga_discover
+  priority: high
+  status: completed
+  completed_at: "2026-03-03T23:25:00+09:00"
+  completion_note: "家老が直接実装。getRakutenBooksUrl をexternal-links.tsxに追加。ISBN entry処理時に楽天URLを生成。ビルド成功・デプロイ完了。commit: e631a54"
+
+- id: cmd_087
+  timestamp: "2026-03-03T23:30:00+09:00"
+  north_star: "類似作品レコメンドはサイト回遊率の要。書影なしでは目に止まらず、クリック率が激減する。視覚的な訴求力を確保し回遊を促進する"
+  purpose: "作品詳細ページの「この作品に似た漫画」セクションにカバー画像を表示し、一覧ページと同等の視覚品質にする"
+  acceptance_criteria:
+    - "作品詳細ページの類似作品セクションに各作品のカバー画像が表示されている"
+    - "カバー画像がない作品はcmd_085同様に非表示、またはfallback画像を表示"
+    - "画像クリックで該当作品の詳細ページに遷移できる"
+    - "npm run build が成功する"
+    - "本番デプロイ後、複数の作品詳細ページで類似作品の書影表示を確認"
+  command: |
+    作品詳細ページの「この作品に似た漫画」セクションにカバー画像が表示されていない。
+    殿が直接指摘。
+
+    調査・修正方針:
+    1. 類似作品の取得クエリ（API or DB直接）がcover_urlを含んでいるか確認
+    2. コンポーネント側でcover_urlを受け取って表示しているか確認
+    3. 画像が渡っていない場合はクエリ修正、表示されていない場合はコンポーネント修正
+    4. カバーなし作品はcmd_085のポリシーに合わせる（非表示 or fallback）
+    5. デプロイして本番確認
+
+    対象リポ:
+    ~/projects/012_manga-workspace/apps/public/
+    ~/projects/009_manga-discover/
+  project: manga_discover
+  priority: high
+  status: completed
+  completed_at: "2026-03-03T23:45:00+09:00"
+  completion_note: "根本原因: SimilarWork型にcover_urlフィールドなし。cover_imageは空文字、実データはcover_urlに存在。SimilarWork interfaceにcover_url追加、work-detail.tsxでcover_url||cover_imageに変更。ビルド成功・デプロイ完了。commit: c1f1bc8"
+
+- id: cmd_088
+  timestamp: "2026-03-04T00:10:00+09:00"
+  north_star: "評価データの質がレコメンド精度を決める。3軸→4軸化で「神」層を分離し、ユーザーの漫画DNAを可視化することで、精度とエンゲージメント両方を劇的に向上させる。Peroryの最大差別化機能になる"
+  purpose: "/rateページを4方向評価システムに刷新し、漫画DNA（Top 10殿堂入り）機能を実装する。音ゲー感覚の爆速評価体験を実現する"
+  acceptance_criteria:
+    - "/rateページで4方向評価が動作する: 上=神(DNA)、右=好き、左=パス、下=既読"
+    - "W/A/S/Dキーで各方向に評価でき、カードが対応方向に飛ぶアニメーションが再生される"
+    - "モバイルではスワイプ操作で4方向に評価できる"
+    - "usePreferencesフックが4軸(manga_dna/favorites/passed/read)を管理している"
+    - "「神」評価した作品がDNA配列に蓄積される"
+    - "DNA配列が10件を超えた場合、入れ替え戦UI（現10位 vs 新候補の比較モーダル）が表示される"
+    - "漫画DNAの可視化ページまたはセクションが存在する（/dna or プロフィール内）"
+    - "オンボーディングモーダルが新しい4方向操作を説明している"
+    - "既存のfavorites/passedデータとの後方互換性が保たれている（既存localStorage破壊しない）"
+    - "npm run build が成功する"
+    - "本番デプロイ後、PC(キーボード)とモバイル(スワイプ)の両方で動作確認"
+  command: |
+    ## /rate ページ UI/UX 革命 — 4方向評価 + 漫画DNA
+
+    殿承認済み。Gemini提案を評価・取捨選択した結果、以下を実装する。
+
+    ### 1. 4方向評価システム（現行3軸→4軸）
+
+    現行: 💚推し(F) / ❌パス(X) / 📖既読(R)
+    新規: 🧬神DNA(W/上) / ❤️好き(D/右) / 🚫パス(A/左) / 📥既読(S/下)
+
+    #### キーボード操作
+    - W/↑: 神（漫画DNA殿堂入り）— カードが上に光りながら吸い込まれる
+    - D/→: 好き/読みたい — カードが右にスライドして消える
+    - A/←: パス/非表示 — カードが左にフェードアウト
+    - S/↓: 既読/保留 — カードが下にスタックされる
+
+    #### モバイル操作
+    - 上スワイプ: 神
+    - 右スワイプ: 好き
+    - 左スワイプ: パス
+    - 下スワイプ: 既読
+
+    #### Framer Motionアニメーション
+    - 各方向に飛ぶカードアニメーション（既存SwipeCardを拡張）
+    - 方向ごとに色・アイコンのオーバーレイ表示（ドラッグ中にプレビュー）
+    - 次カードの先行読み込み（既存の仕組みを維持）
+
+    #### カードUI
+    - 中央に表紙を大きく
+    - 四隅にうっすらアクションアイコンガイド（🧬❤️🚫📥）
+    - 下部にsimilar_worksのreason_textがあれば「AIの一言」として表示（なければ省略）
+
+    ### 2. usePreferencesフック拡張
+
+    現行:
+    ```typescript
+    { favorites: number[], passed: number[], ratingCount: number }
+    ```
+
+    新規:
+    ```typescript
+    {
+      manga_dna: number[],    // 神（最大10、入れ替え戦で管理）
+      favorites: number[],     // 好き（従来のfavorites）
+      passed: number[],        // パス（従来のpassed）
+      read: number[],          // 既読（従来のreadingStatus completedから移行）
+      ratingCount: number
+    }
+    ```
+
+    **後方互換**: 既存localStorageの favorites/passed は維持。manga_dna/read を追加。
+    既存のreadingStatus hookとの整合性も確認すること。
+
+    ### 3. 漫画DNA機能
+
+    #### Top 10管理
+    - 「神」評価で manga_dna 配列に追加
+    - 10件以下: そのまま追加
+    - 11件目以降: 入れ替え戦モーダル表示
+      - 現在の10位（最後に追加された作品）と新候補を左右に並べる
+      - 「入れ替える」「やっぱりやめる」の2択
+      - 入れ替えた場合、外れた作品は favorites に降格
+
+    #### DNA可視化
+    - /dna ページ（新規）または /rate ページ内セクション
+    - DNA作品をグリッド表示（書影 + タイトル）
+    - 将来的にはDNAらせんモチーフの可視化（Phase 2、今回はシンプルなグリッドでOK）
+
+    ### 4. オンボーディング更新
+    - 既存モーダルを4方向操作説明に更新
+    - W/A/S/Dキーヒントを含める
+    - モバイルではスワイプ方向の図解
+
+    ### 5. 不採用項目（実装しないこと）
+    - 天気API連携: 不要
+    - 気分トグル: Phase 2
+    - パス→作家/ジャンル排除: 危険。作品単位の除外のみ
+    - ContextHandler: 不要
+
+    ### 対象リポ
+    ~/projects/012_manga-workspace/apps/public/
+
+    ### 参考ファイル
+    - src/app/[locale]/rate/page.tsx（メインページ）
+    - src/hooks/use-preferences.ts（評価管理フック）
+    - src/hooks/use-reading-status.ts（既読管理フック）
+    - src/components/rate-list.tsx（リストモード）
+  project: manga_discover
+  priority: critical
+  status: pending
+
+- id: cmd_089
+  timestamp: "2026-03-04T00:20:00+09:00"
+  north_star: "ブランドアイデンティティの確立。ロゴはサイトの第一印象を決める。DNA二重らせんモチーフでサービスの核心を一目で伝え、プロフェッショナルな信頼感を与える"
+  purpose: "殿作成のロゴ（DNA二重らせん）をサイト全体に展開し、favicon/ヘッダー/OGP/PWAアイコンを統一する"
+  acceptance_criteria:
+    - "favicon.ico (32x32, 16x16) がDNAロゴになっている"
+    - "favicon.svg が設置されている"
+    - "apple-touch-icon.png (180x180) がDNAロゴになっている"
+    - "OGP画像 (1200x630) にロゴ+キャッチコピーが入っている"
+    - "PWAアイコン (192x192, 512x512) がDNAロゴになっている"
+    - "サイトヘッダーのロゴがDNAロゴ+「manga discover」テキストに変更されている"
+    - "ダークモード対応（暗背景でもロゴが視認できる）"
+    - "npm run build が成功する"
+    - "本番デプロイ後、favicon・ヘッダー・OGPが全て新ロゴで表示される"
+  command: |
+    殿がDNAロゴを作成済み。サイト全体への展開を実行する。
+    以前家老が試みた際にエラーが出たため、改めて発令。
+
+    ### 元画像
+    apps/public/public/logo-original.png (1536x1024, PNG RGBA)
+    — DNA二重らせん（Indigo #6366F1 → Orange #F97316）+ 「manga discover」テキスト
+
+    ### 生成すべきファイル（sharp or sips で変換）
+
+    1. **favicon.ico** (32x32, 16x16 マルチサイズ)
+       - ロゴマーク部分のみ切り出し（テキスト除外）
+       - 白背景版
+
+    2. **favicon.svg**
+       - 可能ならSVGトレース、難しければPNG favicon で代替
+
+    3. **apple-touch-icon.png** (180x180)
+       - ロゴマーク + 余白
+
+    4. **icon-192.png** / **icon-512.png** (PWA用)
+       - 既存ファイルを置き換え
+
+    5. **og-image.png** (1200x630)
+       - ロゴ + 「manga discover」+ キャッチコピー「AIで、DNAで」
+       - ダーク背景(#0F172A)推奨
+
+    6. **ヘッダーロゴ**
+       - layout.tsxまたはheaderコンポーネントのロゴを差し替え
+       - ダークモード: マーク明度UP + テキスト白
+       - ライトモード: そのまま
+
+    ### 注意事項
+    - sharp がインストールされていなければ sips (macOS組み込み) を使う
+    - ICO生成は png-to-ico パッケージ or オンラインツール代替
+    - SVGトレースが難しければスキップしてPNG faviconで進める
+    - 元画像のロゴマーク部分（テキスト上のDNAらせん）を適切にクロップすること
+
+    ### 対象リポ
+    ~/projects/012_manga-workspace/apps/public/
+  project: manga_discover
+  priority: high
+  status: completed
+  completed_at: "2026-03-04T00:35:00+09:00"
+  completion_note: "favicon.ico(32x32 Python ICO作成), apple-icon.png(180x180), icon-192/512 PWA再生成, logo.png更新, layout.tsx icons metadata更新。ビルド成功。commit: bae8f1e"
