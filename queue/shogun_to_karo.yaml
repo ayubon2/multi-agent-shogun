@@ -2659,3 +2659,101 @@ commands:
   status: completed
   completed_at: "2026-03-04T00:35:00+09:00"
   completion_note: "favicon.ico(32x32 Python ICO作成), apple-icon.png(180x180), icon-192/512 PWA再生成, logo.png更新, layout.tsx icons metadata更新。ビルド成功。commit: bae8f1e"
+
+- id: cmd_090
+  timestamp: '2026-03-04T10:00:00+09:00'
+  north_star: "ユーザーの「次に読む漫画」発見体験を気分ドリブンに拡張し、サイト滞在時間とコンバージョン率を向上させる"
+  purpose: "トップページに気分切替チップ（アツい/エモい/無になりたい/笑いたい）が設置され、選択に応じてレコメンド結果が変わる"
+  acceptance_criteria:
+    - "トップページに4つの気分チップ（アツい/エモい/無になりたい/笑いたい）が表示される"
+    - "チップ選択でDiscoveryLanesまたはレコメンド結果が気分タグに応じてフィルタされる"
+    - "選択状態がlocalStorageに保存され、再訪問時に復元される"
+    - "モバイル・デスクトップ両対応、ダークモード対応"
+    - "ビルド成功、HTTP 200"
+  command: |
+    UX Phase 2 — 気分トグル実装。
+
+    トップページ(page.tsx)のDiscoveryLanes上部に気分切替チップを配置。
+    タグ体系（context/design/tag_system.md参照）の感情系タグとマッピング:
+    - アツい → アクション、バトル、スポーツ
+    - エモい → 恋愛、ヒューマンドラマ、青春
+    - 無になりたい → 日常、癒し、グルメ
+    - 笑いたい → ギャグ、コメディ、パロディ
+
+    対象リポ: ~/projects/012_manga-workspace/apps/public/
+    DB: ~/projects/009_manga-discover/data/db/discover.db
+  project: manga_discover
+  priority: high
+  status: pending
+
+- id: cmd_091
+  timestamp: '2026-03-04T10:00:00+09:00'
+  north_star: "類似作品レコメンドの説得力を高め、クリック率・回遊率を向上させる"
+  purpose: "類似作品カードにAIの推薦理由(reason_text)が表示され、ユーザーが「なぜこれが推薦されたか」を理解できる"
+  acceptance_criteria:
+    - "WorkCardまたはHoverCardにreason_textが表示される"
+    - "reason_textが空の場合はフォールバック（非表示 or ジャンル一致等の自動生成テキスト）"
+    - "詳細ページ(/works/[id])の類似作品セクションにも反映"
+    - "ビルド成功、HTTP 200"
+  command: |
+    AI推薦理由の可視化。
+
+    similar_worksテーブルのreason_textカラムをUI表示に活用。
+    - work-detail.tsx の類似作品セクション内WorkCardに推薦理由テキスト表示
+    - reason_text空の場合: 共通タグ数や同著者等の自動理由生成
+
+    対象リポ: ~/projects/012_manga-workspace/apps/public/
+  project: manga_discover
+  priority: high
+  status: pending
+
+- id: cmd_092
+  timestamp: '2026-03-04T10:00:00+09:00'
+  north_star: "SNS共有時の第一印象を最大化し、オーガニック流入を増加させる。BGプロセス死亡による収集停滞を解消する"
+  purpose: "OGP画像(1200x630)が生成されSNSシェア時にロゴ+キャッチコピーが表示される。死亡BGプロセスが復旧し収集が再開される"
+  acceptance_criteria:
+    - "public/og-image.png (1200x630) にロゴ+「manga discover」+「AIで、DNAで」が配置されている"
+    - "layout.tsxまたはmetadataでog:imageがog-image.pngを参照している"
+    - "collect_google_books.py が正常稼働（ハング時は再起動）"
+    - "collect_rakuten_books.py が正常稼働（ハング時は再起動）"
+    - "BW BGプロセス稼働状態確認"
+  command: |
+    OGP画像生成 + BGプロセスヘルスチェック。
+
+    1. OGP画像: sips/Pythonで1200x630画像生成。ダーク背景(#0F172A)、ロゴ配置、キャッチコピー
+       元ロゴ: ~/projects/012_manga-workspace/apps/public/public/logo-original.png
+    2. BGプロセス: PID確認→死亡なら再起動
+       - collect_google_books.py (48h超稼働疑い)
+       - collect_rakuten_books.py (48h超稼働疑い)
+       - BW BGパイプライン状態確認
+
+    対象リポ: ~/projects/012_manga-workspace/apps/public/
+  project: manga_discover
+  priority: high
+  status: pending
+
+- id: cmd_093
+  timestamp: '2026-03-04T10:00:00+09:00'
+  north_star: "未完成ページを全て完成させ、サイト全体の完成度とユーザー体験の一貫性を確保する"
+  purpose: "/mylistページが完成しお気に入り/既読/パスの一覧が閲覧できる。検索品質が改善される。/rateに初回オンボーディングモーダルが表示される"
+  acceptance_criteria:
+    - "/mylist にお気に入り/既読/パスの3タブが表示され、各タブに該当作品一覧が表示される"
+    - "検索でtitle+author複合検索が正しく動作する"
+    - "/rate 初回アクセス時にオンボーディングモーダルが表示される（閉じたらlocalStorageで非表示）"
+    - "全ページビルド成功、HTTP 200"
+  command: |
+    残ページ一掃 — /mylist + 検索改善 + /rateオンボーディング。
+
+    1. /mylist: 推し(favorites)/既読(read)/パス(passed) タブ切替UI
+       - use-preferences.ts のデータを活用
+       - WorkCardグリッド表示、0件メッセージ
+    2. 検索品質: title+author複合検索改善
+       - /api/search のSQLクエリ改善（AND条件 or 重み付き検索）
+    3. /rate オンボーディング: 初回モーダル
+       - 操作説明（スワイプ/キーボード W/A/S/D）
+       - localStorage で初回のみ表示
+
+    対象リポ: ~/projects/012_manga-workspace/apps/public/
+  project: manga_discover
+  priority: high
+  status: pending
