@@ -2598,7 +2598,9 @@ commands:
     - src/components/rate-list.tsx（リストモード）
   project: manga_discover
   priority: critical
-  status: pending
+  status: completed
+  completed_at: "2026-03-04T01:00:00+09:00"
+  completion_note: "/rate 4方向評価(W/A/S/D) + 漫画DNA Top10 + /dnaページ実装完了"
 
 - id: cmd_089
   timestamp: "2026-03-04T00:20:00+09:00"
@@ -2684,7 +2686,9 @@ commands:
     DB: ~/projects/009_manga-discover/data/db/discover.db
   project: manga_discover
   priority: high
-  status: pending
+  status: completed
+  completed_at: "2026-03-05T13:15:00+09:00"
+  completion_note: "MoodChipsコンポーネントはmood-chips.tsxに実装済みだったがLazyBelowFoldに未接続だった。useState(moodTags)+dynamic import追加でDiscoveryLanesと接続。DBシンボリックリンク切れ(009→bk/009)も修正。ビルド成功・HTTP 200確認。commit: a2b56e2"
 
 - id: cmd_091
   timestamp: '2026-03-04T10:00:00+09:00'
@@ -2705,7 +2709,9 @@ commands:
     対象リポ: ~/projects/012_manga-workspace/apps/public/
   project: manga_discover
   priority: high
-  status: pending
+  status: completed
+  completed_at: "2026-03-04T02:00:00+09:00"
+  completion_note: "ReasonBadgesコンポーネント実装済み。work-detail.tsxの類似作品セクションでreason_textをReasonBadgesで表示。reason_text空の場合は非表示。commit: 856bca5後のコミット群で実装確認。"
 
 - id: cmd_092
   timestamp: '2026-03-04T10:00:00+09:00'
@@ -2730,7 +2736,9 @@ commands:
     対象リポ: ~/projects/012_manga-workspace/apps/public/
   project: manga_discover
   priority: high
-  status: pending
+  status: completed
+  completed_at: "2026-03-05T13:15:00+09:00"
+  completion_note: "OGP: og-image.png(1200x630)生成済み、opengraph-image.tsx動的ルート実装済み、layout.tsxで/opengraph-imageを参照。BGプロセス: collect_google_books.py/collect_rakuten_books.py/BWパイプライン全て停止状態を確認（プロセスなし）。現在データ収集が停止中 — 殿の判断を要請。commit: 856bca5"
 
 - id: cmd_093
   timestamp: '2026-03-04T10:00:00+09:00'
@@ -2756,4 +2764,6 @@ commands:
     対象リポ: ~/projects/012_manga-workspace/apps/public/
   project: manga_discover
   priority: high
-  status: pending
+  status: completed
+  completed_at: "2026-03-04T02:00:00+09:00"
+  completion_note: "/mylist: 6タブ(神/好き/普通/嫌い/大嫌い/未読)実装済み（要件の3タブより充実）。検索: queries.tsでtitle+author複合検索実装済み。/rateオンボーディング: manga-rate-onboarding-v2キーでlocalStorage永続化実装済み。commit: 856bca5"
