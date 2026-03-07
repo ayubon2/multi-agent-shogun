@@ -6501,7 +6501,7 @@ commands:
     全ページ計測: npx playwright test lighthouse（または手動計測）
   project: '013'
   priority: HIGH
-  status: in_progress
+  status: completed
 - id: cmd_269
   timestamp: '2026-03-08T05:30:00+09:00'
   purpose: cmd_235 BW修正Phase2完了確認+報告
@@ -6683,7 +6683,7 @@ commands:
     依存: cmd_270 + cmd_268 完了後に実行
   project: '013'
   priority: HIGH
-  status: pending
+  status: completed
 - id: cmd_275
   timestamp: '2026-03-08T06:30:00+09:00'
   purpose: MADB自動統合バッチPhase1（P1完全一致104グループ）
@@ -7027,7 +7027,8 @@ commands:
     5条件一致+スコアリング。batch30。バックアップ必須。
   project: '013'
   priority: HIGH
-  status: pending
+  status: completed
+  note: 将軍blocked指示前にa1全完了(232G/244losers,133275→133031)。cm101混入リスクは事後確認要。
 - id: cmd_287
   timestamp: '2026-03-08T10:00:00+09:00'
   purpose: 設計書更新コミット（Gemini軍議反映9ファイル）
@@ -7039,7 +7040,7 @@ commands:
     git add docs/design/ && git commit && gitleaks detect
   project: '013'
   priority: MEDIUM
-  status: pending
+  status: completed
 - id: cmd_288
   timestamp: '2026-03-08T10:00:00+09:00'
   purpose: Phase7デプロイ+全検証
@@ -7059,8 +7060,63 @@ commands:
   - datePublishedFinal/ndc/genre活用方針
   - 実装cmd分解
   command: |
-    軍師タスク。MADB未活用3フィールドの活用設計。
-    出力: docs/design/madb_field_utilization.md
+    軍師タスク。MADB一軍データ完全活用の設計。スコープ拡大。
+
+    ## Aグループ: スキーマにあるが未活用（即対応）
+    - ndc (73.5%): 日本十進分類法。ジャンル補完・フィルタ。@search index追加の是非
+    - titleKana: かな検索・50音ソート。fulltext検索対象に追加の是非
+    - countryOfOrigin: 国産/海外フィルタ
+
+    ## Bグループ: 002に取得済み・013に未投入（巻レベル一軍データ）
+    metadata101（832K巻）はMADB=一軍データ。ディスク上のコピーに過ぎない。
+    - 巻別ISBN (schema:isbn): ISBNブリッジの核心原料
+    - volumeNumber: 読書進行度の巻情報（非整数巻含む）
+    - 巻別datePublished: 新刊通知・datePublishedFinal精度向上
+    - ma:jpno: NDL ID（書誌正確性）
+    - numberOfPages: ページ数（読了時間推定）
+    - price: 価格（将来機能）
+
+    設計:
+    1. A: 既存フィールドのクエリ・フィルタ追加方針
+    2. B: 巻データの013投入方針（Volume型新設 or Series拡張?）
+    3. 実装cmd分解（A=1cmd、B=2-3cmd）
+    4. tier_system.mdとの整合性確認
+
+    出力: docs/design/madb_field_utilization.md + レポートYAML
   project: '013'
-  priority: MEDIUM
-  status: pending
+  priority: HIGH
+  status: in_progress
+- id: cmd_290
+  timestamp: '2026-03-08T11:00:00+09:00'
+  purpose: cm101/cm104混入調査＋切り分け設計
+  acceptance_criteria:
+  - cm101由来のSeriesエントリ数を特定
+  - Aパターン重複（49%）のうちcm101混入が原因の件数を特定
+  - cm101データをVolume型に変換するか削除するかの方針決定
+  - cmd_286（C強統合）の再開可否判断
+  command: |
+    CRITICAL: cmd_286（C強統合）をブロックした。理由: cm101（巻データ）がcm104（シリーズ）に混入している疑い。
+
+    ## 背景
+    - MADBにはcm104（シリーズ、133K）とcm101（巻、832K）の2テーブルがある
+    - 013のSeriesには本来cm104のみが入るべきだが、cm101由来のエントリが混入している可能性
+    - これがAパターン重複（5,119グループの49%）の根本原因の疑い
+    - cmd_286のC強統合はcm101由来エントリを誤って正規Seriesに統合するリスクがある
+
+    ## 調査項目
+    1. 013のDgraph Seriesエントリのうち、madbIdがcm101由来のものを特定（cm101_xxxxx形式？）
+    2. 該当エントリ数をカウント
+    3. 002のmetadata101テーブルとの照合（同じmadbIdが巻データとして存在するか）
+    4. Aパターン重複グループのうち、cm101混入が原因のグループ数を特定
+
+    ## 設計判断
+    - cm101由来エントリの処理方針: (a) Volume型に変換 (b) 削除 (c) フラグ付けて除外
+    - cmd_289（MADB活用設計）のBグループ（巻データ活用）との整合性
+    - cmd_286再開の条件定義
+
+    出力: レポートYAML + 方針提案
+  project: '013'
+  priority: CRITICAL
+  status: in_progress
+  depends_on: []
+  blocks: [cmd_286]
