@@ -16,40 +16,51 @@ ensure_inbox_file() {
     fi
 }
 
-pane_exists() {
-    local pane="$1"
-    tmux list-panes -a -F "#{session_name}:#{window_name}.#{pane_index}" 2>/dev/null | grep -qx "$pane"
+# Find pane by @agent_id dynamically (no more hardcoded pane targets)
+find_pane_by_agent_id() {
+    local agent="$1"
+    tmux list-panes -a -F '#{pane_id} #{@agent_id}' 2>/dev/null \
+        | awk -v id="$agent" '$2 == id { print $1; exit }'
 }
 
 start_watcher_if_missing() {
     local agent="$1"
-    local pane="$2"
-    local log_file="$3"
-    local cli
+    local log_file="$2"
+    local pane
 
     ensure_inbox_file "$agent"
-    if ! pane_exists "$pane"; then
-        return 0
-    fi
 
     if pgrep -f "scripts/inbox_watcher.sh ${agent} " >/dev/null 2>&1; then
         return 0
     fi
 
-    cli=$(tmux show-options -p -t "$pane" -v @agent_cli 2>/dev/null || echo "codex")
+    pane=$(find_pane_by_agent_id "$agent")
+    if [ -z "$pane" ]; then
+        return 0
+    fi
+
+    local cli
+    cli=$(tmux show-options -p -t "$pane" -v @agent_cli 2>/dev/null || echo "claude")
     nohup bash scripts/inbox_watcher.sh "$agent" "$pane" "$cli" >> "$log_file" 2>&1 &
 }
 
+AGENTS="shogun karo ashigaru1 ashigaru2 ashigaru3 ashigaru4 ashigaru5 ashigaru6 ashigaru7 gunshi"
+
+# Start nudger scripts if not running (secretaries that wake managers periodically)
+start_nudger_if_missing() {
+    local script="$1"
+    local log="$2"
+    if pgrep -f "scripts/${script}" >/dev/null 2>&1; then
+        return 0
+    fi
+    nohup bash "scripts/${script}" >> "$log" 2>&1 &
+}
+
 while true; do
-    start_watcher_if_missing "shogun" "shogun:main.0" "logs/inbox_watcher_shogun.log"
-    start_watcher_if_missing "karo" "multiagent:agents.0" "logs/inbox_watcher_karo.log"
-    start_watcher_if_missing "ashigaru1" "multiagent:agents.1" "logs/inbox_watcher_ashigaru1.log"
-    start_watcher_if_missing "ashigaru2" "multiagent:agents.2" "logs/inbox_watcher_ashigaru2.log"
-    start_watcher_if_missing "ashigaru3" "multiagent:agents.3" "logs/inbox_watcher_ashigaru3.log"
-    start_watcher_if_missing "ashigaru4" "multiagent:agents.4" "logs/inbox_watcher_ashigaru4.log"
-    start_watcher_if_missing "ashigaru5" "multiagent:agents.5" "logs/inbox_watcher_ashigaru5.log"
-    start_watcher_if_missing "ashigaru6" "multiagent:agents.6" "logs/inbox_watcher_ashigaru6.log"
-    start_watcher_if_missing "ashigaru7" "multiagent:agents.7" "logs/inbox_watcher_ashigaru7.log"
-    start_watcher_if_missing "gunshi" "multiagent:agents.8" "logs/inbox_watcher_gunshi.log"
+    for agent in $AGENTS; do
+        start_watcher_if_missing "$agent" "logs/inbox_watcher_${agent}.log"
+    done
+    start_nudger_if_missing "karo_nudger.sh" "logs/karo_nudger.log"
+    start_nudger_if_missing "shogun_nudger.sh" "logs/shogun_nudger.log"
     sleep 5
 done

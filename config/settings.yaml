@@ -23,6 +23,7 @@ skill:
 cli:
   default: claude
   agents:
+    karo: { model: opus }
     ashigaru1: { model: sonnet }
     ashigaru2: { model: sonnet }
     ashigaru3: { model: sonnet }

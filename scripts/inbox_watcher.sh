@@ -268,6 +268,9 @@ normalize_special_command() {
     local raw_content="${2:-}"
 
     case "$msg_type" in
+        compact_command)
+            echo "/compact"
+            ;;
         clear_command)
             echo "/clear"
             ;;
@@ -411,7 +414,7 @@ try:
 
     messages = data.get("messages", []) or []
     unread = [m for m in messages if not m.get("read", False)]
-    special_types = ("clear_command", "model_switch", "cli_restart")
+    special_types = ("compact_command", "clear_command", "model_switch", "cli_restart")
     specials = [m for m in unread if m.get("type") in special_types]
 
     if specials:
@@ -952,6 +955,14 @@ for s in data.get('specials', []):
                     continue
                 fi
             fi
+            if [ "$msg_type" = "compact_command" ]; then
+                clear_seen=1  # compact also counts as context reset (skip send_context_reset)
+                # Busy guard: skip /compact if agent is currently processing.
+                if agent_is_busy && [[ "$AGENT_ID" != "shogun" ]]; then
+                    echo "[$(date)] [SKIP] Agent $AGENT_ID is busy — /compact (compact_command) deferred to next cycle" >&2
+                    continue
+                fi
+            fi
             cmd=$(normalize_special_command "$msg_type" "$msg_content")
             if [ -n "$cmd" ]; then
                 send_cli_command "$cmd"
@@ -1028,9 +1039,9 @@ for s in data.get('specials', []):
         fi
 
         # ─── Context reset before new task ───
-        # Send /new or /clear once when task_assigned is first detected,
+        # Send /new or /compact once when task_assigned is first detected,
         # to clear stale context from the previous task.
-        # Skip if: (1) already sent this batch, (2) clear_command already handled above,
+        # Skip if: (1) already sent this batch, (2) compact_command/clear_command already handled above,
         #          (3) agent is shogun (human-controlled).
         if [ "$has_task_assigned" = "1" ] && [ "$NEW_CONTEXT_SENT" -eq 0 ] && [ "$clear_seen" -eq 0 ]; then
             send_context_reset

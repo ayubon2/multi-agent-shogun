@@ -25,6 +25,7 @@ files:
   gunshi_report: queue/reports/gunshi_report.yaml  # Gunshi → Karo strategic reports
   dashboard: dashboard.md              # Human-readable summary (secondary data)
   ntfy_inbox: queue/ntfy_inbox.yaml    # Incoming ntfy messages from Lord's phone
+  lord_overrides: customizations/lord_overrides.md  # Lord's customizations (overrides design defaults)
 
 cmd_format:
   required_fields: [id, timestamp, purpose, acceptance_criteria, command, project, priority, status]
@@ -132,7 +133,8 @@ The nudge is minimal: `inboxN` (e.g. `inbox3` = 3 unread). That's it.
 **Agent reads the inbox file itself.** Message content never travels through tmux — only a short wake-up signal.
 
 Special cases (CLI commands sent via `tmux send-keys`):
-- `type: clear_command` → sends `/clear` + Enter via send-keys
+- `type: compact_command` → sends `/compact` + Enter via send-keys（**優先: コンテキスト圧縮、流れが残る**）
+- `type: clear_command` → sends `/clear` + Enter via send-keys（**最終手段のみ: /compact で解決しない場合**）
 - `type: model_switch` → sends the /model command via send-keys
 
 **Escalation** (when nudge is not processed):
@@ -142,7 +144,8 @@ Special cases (CLI commands sent via `tmux send-keys`):
 | 0〜2 min | Standard pty nudge | Normal delivery |
 | 2〜5 min | Escape×2 + nudge | Cursor position bug workaround |
 | 5〜10 min | Repeat nudge (max 2 attempts) | 追加リトライ |
-| 10 min+ | **将軍に承認要求** → 承認後に /clear | /clear Safety Rule 準拠。家老の独断禁止 |
+| 10 min+ | `/compact` 送信（家老の裁量で可） | コンテキスト圧縮で復帰を試みる |
+| /compact後も無応答 | **将軍に承認要求** → 承認後に /clear | /clear Safety Rule 準拠。家老の独断禁止 |
 
 ## Inbox Processing Protocol (karo/ashigaru/gunshi)
 
@@ -161,39 +164,53 @@ When you receive `inboxN` (e.g. `inbox3`):
 3. Only then go idle
 
 This is NOT optional. If you skip this and a redo message is waiting,
-you will be stuck idle until the escalation sends `/clear` (~4 min).
+you will be stuck idle until the escalation sends `/compact` (~10 min).
 
 ## Redo Protocol
 
 When Karo determines a task needs to be redone:
 
 1. Karo writes new task YAML with new task_id (e.g., `subtask_097d` → `subtask_097d2`), adds `redo_of` field
-2. Karo sends `clear_command` type inbox message (NOT `task_assigned`)
-3. inbox_watcher delivers `/clear` to the agent → session reset
-4. Agent recovers via Session Start procedure, reads new task YAML, starts fresh
+2. Karo sends `compact_command` type inbox message（**NOT `clear_command`**）
+3. inbox_watcher delivers `/compact` to the agent → コンテキスト圧縮（会話の流れは残る）
+4. Agent reads new task YAML from compaction recovery, starts fresh on the new task
 
-Race condition is eliminated: `/clear` wipes old context. Agent re-reads YAML with new task_id.
+**Why /compact for Redo**: Previous context is compressed, not destroyed. Agent can still reference prior attempt's lessons. `/clear` is unnecessary — new task_id in YAML is sufficient to prevent confusion with the old task.
 
-## /clear Safety Rule (CRITICAL — 永続ルール)
+## /compact 優先原則 & /clear Safety Rule (CRITICAL — 永続ルール)
 
-`/clear` は会話コンテキストを全消去する破壊的操作である。
+**原則: `/compact` を優先せよ。`/clear` は最終手段。**
 
-**原則: /clear 送信前に将軍の承認を得よ。家老の独断で /clear を送ることは禁止。**
+`/compact` はコンテキストを要約圧縮し、会話の流れを保持する。復帰コストが低い。
+`/clear` はコンテキストを全消去する破壊的操作。復帰にフルリカバリ手順が必要。
 
-手順:
-1. 家老が「エージェントXが応答なし/MCP障害で再起動が必要」と判断
+### /compact の使いどころ（家老の裁量で送信可）
+- コンテキストが重くなったとき（残量30%以下）
+- タスク切替時のコンテキスト整理
+- redo時（新タスクYAML + /compact で十分）
+- エスカレーションでエージェントが10分以上無応答のとき（まず /compact を試す）
+
+### /clear の使いどころ（最終手段のみ — 将軍承認必須）
+- `/compact` 送信後もエージェントが応答しない場合
+- MCP障害で復旧不能な場合（cleanup_bridge.sh → /compact → それでもダメなら /clear）
+- セッションが完全に壊れている場合
+
+### /clear 送信手順（将軍承認必須）
+1. 家老が「/compact でも復旧しない」と判断
 2. `tmux capture-pane` で対象の状態を確認（処理中なら絶対に送るな）
 3. **将軍に inbox_write で承認を求める**（dashboard.md 🚨要対応 にも記載）
 4. 将軍が承認 → 家老が /clear を送信
 5. 将軍が不在（就寝中等）の場合のみ、家老は以下の条件を全て満たす時に限り自律判断可:
+   - `/compact` を試行済みで効果なし
    - 対象エージェントが **10分以上** 無応答
    - `tmux capture-pane` で idle またはエラー状態を確認済み
    - 処理中（thinking / tool実行中）でないことを確認済み
 
 **禁止事項:**
+- `/compact` を試さずにいきなり `/clear` を送ること
 - 処理中のエージェントへの /clear（作業が吹き飛ぶ）
 - 複数エージェントへの一斉 /clear
-- MCP再接続目的での安易な /clear（cleanup_bridge.sh を先に試せ）
+- MCP再接続目的での安易な /clear（cleanup_bridge.sh → /compact を先に試せ）
 
 ## Report Flow (interrupt prevention)
 
@@ -233,7 +250,7 @@ bash scripts/get_unread_inbox.sh <agent_id>
 # Context Layers
 
 ```
-Layer 0: Design Docs    — persistent design decisions (context/design/*.md — 殿の方針の正本)
+Layer 0: Design Docs    — persistent design decisions (各プロジェクトの docs/design/ — 殿の方針の正本)
 Layer 1: Memory MCP     — persistent across sessions (運用ルールのみ。設計判断はLayer 0)
 Layer 2: Project files   — persistent per-project (config/, projects/, context/)
 Layer 3: YAML Queue      — persistent task data (queue/ — authoritative source of truth)
@@ -246,7 +263,7 @@ Layer 4: Session context — volatile (CLAUDE.md auto-loaded, instructions/*.md,
 
 | 情報の種類 | 保管先 | 例 | 禁止事項 |
 |------------|--------|-----|----------|
-| 殿の方針・設計判断・好み | **context/design/*.md** | タグ体系、UX方針、データソース方針 | Memory MCPに設計判断を入れるな |
+| 殿の方針・設計判断・好み | **各プロジェクトの docs/design/** | タグ体系、UX方針、データソース方針 | Memory MCPに設計判断を入れるな。010/context/に置くな |
 | エージェント運用ルール | Memory MCP | idle嫌い、アクセス許可メール | 設計判断を入れるな |
 | 具体的タスク・残課題 | TODO.md | cmd一覧、未実装機能、将来作戦候補 | MemoryMCPにタスクを入れるな |
 | 作戦の計画・設計・コンテキスト | campaigns.md + context/ | 作戦005の設計、足軽への背景情報 | — |
@@ -260,7 +277,7 @@ Layer 4: Session context — volatile (CLAUDE.md auto-loaded, instructions/*.md,
 
 | 保管先 | 入れるもの | 入れてはいけないもの |
 |--------|-----------|-------------------|
-| context/design/*.md | 殿の方針・設計判断・コンセプト | タスク、運用ルール |
+| 各プロジェクトの docs/design/ | 殿の方針・設計判断・コンセプト | タスク、運用ルール |
 | Memory MCP | エージェント運用ルールのみ | 設計判断（design/に書け）、タスク |
 | TODO.md | 残課題・次アクション・将来候補 | 完了済み内容、方針・ルール |
 | campaigns.md | 作戦名・ステータス・依存関係 | 個別サブタスク詳細 |
@@ -274,16 +291,16 @@ Layer 4: Session context — volatile (CLAUDE.md auto-loaded, instructions/*.md,
 
 `read_graph` はセッション開始時に全件読む。件数が多いほどトークンを浪費する。
 
-**殿の方針・設計判断は `context/design/*.md` が正本。Memory MCP には運用ルールのみ。**
+**殿の方針・設計判断は各プロジェクトの `docs/design/` が正本（例: 013なら `~/projects/013_manga-workspace-v2/docs/design/`）。Memory MCP には運用ルールのみ。010/context/design/ は廃止済み。**
 
 **保存基準（厳格）:**
 - **エージェント運用ルール**のみ保存（idle嫌い、アクセス許可等）
-- 殿の方針・設計判断 → `context/design/*.md` に書け（Memory に入れるな）
+- 殿の方針・設計判断 → 対象プロジェクトの `docs/design/` に書け（Memory に入れるな）
 - 1エンティティ = 1テーマ、observations は最大5件まで
 - 全エンティティ合計 10件以下を維持
 
 **保存禁止:**
-- 殿の方針・設計判断 → context/design/*.md に書け
+- 殿の方針・設計判断 → 対象プロジェクトの docs/design/ に書け
 - 手順・ルール → CLAUDE.md または instructions/*.md に書け
 - タスク・残課題 → TODO.md に書け
 - 判断ログ・セッション記録 → TODO.mdに反映したら消す。Memoryに残すな
@@ -298,8 +315,9 @@ Layer 4: Session context — volatile (CLAUDE.md auto-loaded, instructions/*.md,
 タスク実行前に関連する設計書を読むこと。全ファイルを毎回読む必要はない。
 
 **対応表**: instructions/shogun.md および instructions/karo.md に記載。
-**インデックス**: `context/design/README.md`
+**インデックス**: 各プロジェクトの `docs/design/README.md`（例: `~/projects/013_manga-workspace-v2/docs/design/README.md`）
 **スキル**: `/design` で閲覧・更新可能
+**正本ルール**: 設計書は必ず対象プロジェクトの `docs/design/` に作成する。010/context/design/ は使わない。
 
 # Project Management
 
@@ -349,7 +367,7 @@ All agents follow these tiers to determine who can decide what. This eliminates 
 
 | Tier | 判断者 | 例 | ルール |
 |------|--------|-----|--------|
-| T1 自動 | 家老 | タスク分解、足軽割当、QC後のredo、/clear(10分超idle)、YAML衛生修正 | 家老の裁量で即実行。報告はdashboardのみ |
+| T1 自動 | 家老 | タスク分解、足軽割当、QC後のredo、/compact送信、/clear(10分超idle+/compact失敗後)、YAML衛生修正 | 家老の裁量で即実行。報告はdashboardのみ |
 | T2 将軍即決 | 将軍 | 技術選定、目標下方修正、設計承認（殿の既知好みに合致する場合）、段階的リリース判断 | 将軍が即決。殿の好みがMemory MCPに記録済みの場合、設計承認(design_complete→approved)を将軍が自律承認してよい |
 | T3 殿確認 | 殿 | 予算、外部サービス契約、ポリシー変更、セキュリティ重大判断、新規ドメイン取得 | dashboard 🚨 + LINE通知。殿の応答を待つ |
 | T4 殿手動 | 殿のみ | OAuth作成、Chrome操作、CF Dashboard操作、物理作業 | dashboard 🚨 に記載し殿の作業を待つ |
@@ -380,6 +398,16 @@ All agents follow these tiers to determine who can decide what. This eliminates 
 2. **Preflight check**: テスト実行前に前提条件（依存ツール、エージェント稼働状態等）を確認。満たせないなら実行せず報告。
 3. **E2Eテストは家老が担当**: 全エージェント操作権限を持つ家老がE2Eを実行。足軽はユニットテストのみ。
 4. **テスト計画レビュー**: 家老はテスト計画を事前レビューし、前提条件の実現可能性を確認してから実行に移す。
+5. **UI変更は視覚検証必須**: フロントエンド（HTML/CSS/コンポーネント）を修正するタスクでは、curl HTTP 200チェックだけでは不十分。以下を義務化:
+   - `npx next build` 成功確認（ビルドエラー検出）
+   - サーバー再起動後、`npx playwright screenshot` で該当ページのスクリーンショットを取得
+   - スクリーンショットを目視確認し、意図した表示になっていることを報告に含める
+   - **教訓**: curl 200 OKでもクライアントサイドJSエラーやレイアウト崩れは検出できない（2026-03-07実例）
+6. **セキュリティチェック必須**: コード変更（特にスクリプト、API、認証、環境変数関連）を含むタスクでは以下を義務化:
+   - `gitleaks detect --source . --no-git` でシークレット漏洩チェック（pre-commit hookに加え、タスク完了時にも手動実行）
+   - 新規スクリプトの権限確認（不要な `chmod 777` や `sudo` がないか）
+   - 外部API呼び出し時のキー管理確認（ハードコードされていないか、.env経由か）
+   - **教訓**: セキュリティ問題はUI同様、事後発見のコストが高い。変更時に検出する方が安い
 
 # Batch Processing Protocol (all agents)
 

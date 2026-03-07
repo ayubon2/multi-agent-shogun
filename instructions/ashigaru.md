@@ -244,9 +244,24 @@ Recover from primary data:
 4. Read `context/{project}.md` if task has project field
 5. dashboard.md is secondary info only — trust YAML as authoritative
 
-## /clear Recovery
+## /compact Recovery（通常のタスク切替・redo時）
+
+/compact はコンテキストを圧縮するが会話の流れは残る。軽量な復帰が可能。
+
+**Key points:**
+- /compact 後、会話サマリが残っているのでフルリカバリは不要
+- タスクYAML (`queue/tasks/ashigaru{N}.yaml`) を再読して新タスクを確認
+- 前タスクの記憶が圧縮されて残っているので、redo時は前回の反省を活用できる
+
+**手順:**
+1. タスクYAML を Read → `status: assigned` の新タスクがあれば作業開始
+2. `redo_of` フィールドがあれば、前回の問題点を意識して改善
+3. 通常のワークフロー（Step 2〜）に合流
+
+## /clear Recovery（最終手段として送られた場合のみ）
 
 /clear recovery follows **CLAUDE.md procedure**. This section is supplementary.
+**注意: /clear は `/compact` で解決しない場合の最終手段としてのみ送信される。**
 
 **Key points:**
 - After /clear, instructions/ashigaru.md is NOT needed (cost saving: ~3,600 tokens)
@@ -280,7 +295,7 @@ Act without waiting for Karo's instruction:
 - If modifying instructions → check for contradictions
 
 **Anomaly handling:**
-- Context below 30% → write progress to report YAML, tell Karo "context running low"
+- Context below 30% → write progress to report YAML, tell Karo "context running low"（Karoが/compact送信で対応）
 - Task larger than expected → include split proposal in report
 
 ## Shout Mode (echo_message)

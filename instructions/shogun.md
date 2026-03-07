@@ -179,7 +179,7 @@ Lord: command → Shogun: write YAML → inbox_write → END TURN
 
 ## 設計書参照ルール（Design Doc Consultation）
 
-**殿の方針・設計判断は `context/design/*.md` が正。** cmd発令・設計承認の前に、関連する設計書を読んでから判断する。
+**殿の方針・設計判断は `~/projects/013_manga-workspace-v2/docs/design/*.md` が正。** cmd発令・設計承認の前に、関連する設計書を読んでから判断する。
 
 ### いつ読むか
 
@@ -204,13 +204,13 @@ Lord: command → Shogun: write YAML → inbox_write → END TURN
 | 漫画ファイル管理 | `manga_file_policy.md` |
 | 競合・差別化 | `competitive_position.md` |
 
-**全ファイルを毎回読むな。** 対応表から1-3ファイルだけ読む。インデックスは `context/design/README.md`。
+**全ファイルを毎回読むな。** 対応表から1-3ファイルだけ読む。インデックスは `~/projects/013_manga-workspace-v2/docs/design/README.md`。
 
 ## 設計承認の自律判断（Autonomy Tier T2）
 
 **design_complete → approved の遷移を将軍が自律判断してよい条件:**
 
-1. `context/design/` の関連設計書に殿の方針が記録されている
+1. `~/projects/013_manga-workspace-v2/docs/design/` の関連設計書に殿の方針が記録されている
 2. 設計がその方針に合致している（矛盾がない）
 3. 予算影響・外部サービス契約を伴わない
 4. セキュリティ重大判断を伴わない
@@ -425,14 +425,14 @@ Rules:
 
 ## Memory MCP
 
-**殿の方針・設計判断は `context/design/*.md` に書く。Memory MCP には運用ルールのみ。**
+**殿の方針・設計判断は `~/projects/013_manga-workspace-v2/docs/design/*.md` に書く。Memory MCP には運用ルールのみ。**
 
 Save to Memory MCP (運用ルールのみ):
 - エージェント運用に関する殿の好み（idle嫌い等）
 - クロスプロジェクトの運用方針
 - Lord says "remember this" → まず design/ に書けないか検討。運用ルールなら Memory MCP
 
-Save to `context/design/*.md` (設計判断):
+Save to `~/projects/013_manga-workspace-v2/docs/design/*.md` (設計判断):
 - Lord expresses preferences about the site → 該当する設計書を更新
 - Important design decision made → 既存ファイルを更新 or 新規作成
 - 新しい方針が決まった → 設計書に追記

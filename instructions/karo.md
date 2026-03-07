@@ -296,7 +296,7 @@ Report via dashboard.md update only. Reason: interrupt prevention during lord's 
 
 ### 対応表（タスクの種類 → 読むファイル）
 
-| タスクの種類 | 読むファイル（`context/design/` 配下） |
+| タスクの種類 | 読むファイル（`~/projects/013_manga-workspace-v2/docs/design/` 配下） |
 |------------|--------------------------------------|
 | 画像・書影 | `cover_pipeline.md`, `quality_standards.md` |
 | タグ | `tag_system.md`, `data_policy.md` |
@@ -657,21 +657,21 @@ On receiving ashigaru reports, check `skill_candidate` field. If found:
 2. Add to dashboard.md "スキル化候補" section
 3. **Also add summary to 🚨 要対応** (lord's approval needed)
 
-## /clear Protocol (Ashigaru Task Switching)
+## Context Management Protocol (Ashigaru Task Switching)
 
-Purge previous task context for clean start. For rate limit relief and context pollution prevention.
+**原則: `/compact` を優先。`/clear` は最終手段。** CLAUDE.md「/compact 優先原則」に準拠。
 
-### When to Send /clear
+### タスク切替時（デフォルト: /compact）
 
 After task completion report received, before next task assignment.
 
-### Procedure (6 Steps)
+### Procedure (5 Steps)
 
 ```
 STEP 1: Confirm report + update dashboard
 
 STEP 2: Write next task YAML first (YAML-first principle)
-  → queue/tasks/ashigaru{N}.yaml — ready for ashigaru to read after /clear
+  → queue/tasks/ashigaru{N}.yaml — ready for ashigaru to read after /compact
 
 STEP 3: Reset pane title (after ashigaru is idle — ❯ visible)
   # pane titleはconfig/settings.yamlの該当agentのmodel値を使う
@@ -680,44 +680,42 @@ STEP 3: Reset pane title (after ashigaru is idle — ❯ visible)
   Title = MODEL NAME ONLY. No agent name, no task description.
   If model_override active → use that model name
 
-STEP 4: Send /clear via inbox
-  bash scripts/inbox_write.sh ashigaru{N} "タスクYAMLを読んで作業開始せよ。" clear_command karo
-  # inbox_watcher が type=clear_command を検知し、/clear送信 → 待機 → 指示送信 を自動実行
+STEP 4: Send /compact via inbox
+  bash scripts/inbox_write.sh ashigaru{N} "タスクYAMLを読んで作業開始せよ。" compact_command karo
+  # inbox_watcher が type=compact_command を検知し、/compact送信 → 待機 → 指示送信 を自動実行
 
 STEP 5以降は不要（watcherが一括処理）
 ```
 
-### Skip /clear When
+### Use /compact Instead of /clear
 
-| Condition | Reason |
+| Condition | Action |
 |-----------|--------|
-| Short consecutive tasks (< 5 min each) | Reset cost > benefit |
-| Same project/files as previous task | Previous context is useful |
-| Light context (est. < 30K tokens) | /clear effect minimal |
+| Normal task switching | `/compact` + 新タスクYAML |
+| Redo (やり直し) | `/compact` + 新タスクYAML（redo_of付き） |
+| Context heavy (>70% used) | `/compact` で圧縮 |
+| Short consecutive tasks (< 5 min each) | `task_assigned` のみ（/compact も不要） |
+| Same project/files as previous task | `task_assigned` のみ（前コンテキスト活用） |
+| MCP障害・完全無応答 | `/compact` 試行 → ダメなら将軍承認後 `/clear` |
 
 ### Shogun Never /clear
 
 Shogun needs conversation history with the lord.
 
-### Karo Self-/clear (Context Relief)
+### Karo Self-/compact (Context Relief)
 
-Karo MAY self-/clear when ALL of the following conditions are met:
+Karo MAY self-/compact when context is getting heavy (remaining < 30%). No conditions required — /compact is non-destructive.
 
-1. **No in_progress cmds**: All cmds in `shogun_to_karo.yaml` are `done` or `pending` (zero `in_progress`)
-2. **No active tasks**: No `queue/tasks/ashigaru*.yaml` or `queue/tasks/gunshi.yaml` with `status: assigned` or `status: in_progress`
-3. **No unread inbox**: `queue/inbox/karo.yaml` has zero `read: false` entries
+Karo MAY self-/clear **only** when ALL of the following conditions are met:
 
-When conditions met → execute self-/clear:
-```bash
-# Karo sends /clear to itself (NOT via inbox_write — direct)
-# After /clear, Session Start procedure auto-recovers from YAML
-```
+1. /compact では不十分（MCP障害等）
+2. **No in_progress cmds**: All cmds in `shogun_to_karo.yaml` are `done` or `pending` (zero `in_progress`)
+3. **No active tasks**: No `queue/tasks/ashigaru*.yaml` or `queue/tasks/gunshi.yaml` with `status: assigned` or `status: in_progress`
+4. **No unread inbox**: `queue/inbox/karo.yaml` has zero `read: false` entries
 
 **When to check**: After completing all report processing and going idle (step 12).
 
-**Why this is safe**: All state lives in YAML (ground truth). /clear only wipes conversational context, which is reconstructible from YAML scan.
-
-**Why this helps**: Prevents the 4% context exhaustion that halted karo during cmd_166 (2,754 article production).
+**Why /compact first**: All state lives in YAML (ground truth). /compact compresses context while keeping conversation flow. /clear is only needed when /compact fails to resolve the issue.
 
 ## Redo Protocol (Task Correction)
 
@@ -741,24 +739,18 @@ STEP 1: Write new task YAML
   - Do NOT just say "redo" — explain WHAT was wrong and HOW to fix it
   - status: assigned
 
-STEP 2: Send /clear via inbox (NOT task_assigned)
-  bash scripts/inbox_write.sh ashigaru{N} "タスクYAMLを読んで作業開始せよ。" clear_command karo
-  # /clear wipes previous context → agent re-reads YAML → sees new task
+STEP 2: Send /compact via inbox (NOT task_assigned)
+  bash scripts/inbox_write.sh ashigaru{N} "タスクYAMLを読んで作業開始せよ。" compact_command karo
+  # /compact compresses context → agent re-reads YAML → sees new task
 
 STEP 3: If still unsatisfactory after 2 redos → escalate to dashboard 🚨
 ```
 
-### Why /clear for Redo
+### Why /compact for Redo
 
-Previous context may contain the wrong approach. `/clear` forces YAML re-read.
+`/compact` compresses context while preserving conversation flow. Agent can reference prior attempt's lessons.
+New task_id with `redo_of` field is sufficient to distinguish from the old task — full context wipe is unnecessary.
 Do NOT use `type: task_assigned` for redo — agent may not re-read the YAML if it thinks the task is already done.
-
-### Race Condition Prevention
-
-Using `/clear` eliminates the race:
-- Old task status (done/assigned) is irrelevant — session is wiped
-- Agent recovers from YAML, sees new task_id with `status: assigned`
-- No conflict with previous attempt's state
 
 ### Redo Task YAML Example
 
@@ -1003,4 +995,4 @@ grep -n "status: in_progress" queue/shogun_to_karo.yaml
 
 - Ashigaru report overdue → check pane status
 - Dashboard inconsistency → reconcile with YAML ground truth
-- Own context < 20% remaining → report to shogun via dashboard, prepare for /clear
+- Own context < 20% remaining → report to shogun via dashboard, execute /compact (prepare for /clear only if /compact fails)
