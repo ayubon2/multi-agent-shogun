@@ -291,7 +291,7 @@ Layer 4: Session context — volatile (CLAUDE.md auto-loaded, instructions/*.md,
 
 `read_graph` はセッション開始時に全件読む。件数が多いほどトークンを浪費する。
 
-**殿の方針・設計判断は各プロジェクトの `docs/design/` が正本（例: 013なら `~/projects/013_manga-workspace-v2/docs/design/`）。Memory MCP には運用ルールのみ。010/context/design/ は廃止済み。**
+**殿の方針・設計判断は各プロジェクトの `docs/design/` が正本（例: 013なら `~/projects/013_manga-workspace-v2/docs/design/`）。Memory MCP には運用ルールのみ。**
 
 **保存基準（厳格）:**
 - **エージェント運用ルール**のみ保存（idle嫌い、アクセス許可等）
@@ -317,7 +317,7 @@ Layer 4: Session context — volatile (CLAUDE.md auto-loaded, instructions/*.md,
 **対応表**: instructions/shogun.md および instructions/karo.md に記載。
 **インデックス**: 各プロジェクトの `docs/design/README.md`（例: `~/projects/013_manga-workspace-v2/docs/design/README.md`）
 **スキル**: `/design` で閲覧・更新可能
-**正本ルール**: 設計書は必ず対象プロジェクトの `docs/design/` に作成する。010/context/design/ は使わない。
+**正本ルール**: 設計書は必ず対象プロジェクトの `docs/design/` に作成する。
 
 # Project Management
 

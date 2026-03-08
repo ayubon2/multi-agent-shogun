@@ -65,3 +65,90 @@ messages:
   read: true
   timestamp: '2026-03-07T11:37:35'
   type: report
+- content: 'cmd_389/390/391全完了。Phase11統合デプロイv2(478テスト/ビルド/3005再起動/カルーセル全行表示OK)、カルーセル順序①-⑪整理(sort修正1件)、Phase12計画ドラフト作成済み。全足軽idle。新規cmd待ち。Note:
+    a3がworksページフィルタ未対応(③④⑦⑨-⑪)を報告、将来cmd候補。browse404はpre-existing Dgraph問題。'
+  from: karo
+  id: msg_20260308_201147_442162dc
+  read: true
+  timestamp: '2026-03-08T20:11:47'
+  type: status_update
+- content: 'cmd_394 batch1 QCゲート報告: 30件中21件成功(hit rate 70%), エラー0, 平均211文字。サンプル品質良好(鬼滅/ヒロアカ/ハイキュー)。isbn13直接利用に修正済み。未発見9件は楽天側データ欠如。batch2進行可否の判断を求む。cmd_392/393/396も完了(テスト520件)。idle足軽6名。'
+  from: karo
+  id: msg_20260308_202533_97fb2307
+  read: true
+  timestamp: '2026-03-08T20:25:33'
+  type: qc_gate
+- content: cmd_395はa4が完了済み(gunshi無応答で代替)。cmd_398(パーソナライズ実装)もa4に割当て済み・作業中。cmd_403→a1,
+    cmd_404→a3, cmd_405→a6割当て完了。a5はcmd_397(あらすじbatch2)作業中。
+  from: karo
+  id: msg_20260308_205412_528fd3ca
+  read: true
+  timestamp: '2026-03-08T20:54:12'
+  type: status_update
+- content: 'cmd_397 batch2完了。1000件中73件成功(7.3%)、あらすじ総数208件。batch1(70%)→batch2(7.3%)でhit
+    rate急落。楽天カバレッジ外の古い作品が大多数。cmd_400(batch3: 5000件)の実施判断を求む。選択肢: (A)batch3続行(5000件×7%≒350件追加→計550件),
+    (B)他データソース(OpenBD等)切替調査, (C)208件で一旦十分として中止。'
+  from: karo
+  id: msg_20260308_205534_03e455c3
+  read: true
+  timestamp: '2026-03-08T20:55:34'
+  type: qc_gate
+- content: 'cmd_406/407完了。(1)代替ソース調査: OpenBD/NDL/Google Books全て不適(あらすじ0-6.7%)。楽天継続+AI生成が推奨。208件で一旦十分か判断求む。(2)名寄せ自動承認batch1:
+    500件マージ成功/失敗0。残著者一致100件あり。高信頼度pending残4306件は著者不一致で手動レビュー要。a4はcmd_398作業中、a7はcmd_408作業中。'
+  from: karo
+  id: msg_20260308_210719_83fb8839
+  read: true
+  timestamp: '2026-03-08T21:07:19'
+  type: status_update
+- content: 'cmd_412完了。Phase12メトリクス集計+Phase13計画書(docs/design/phase13_plan.md)作成済み。テスト562件超過達成。Phase13テーマ「雑誌連載ネットワーク+データ品質仕上げ」。計画書レビューをお願いしたい。cmd_413(a1)は進行中。軍師復活確認（cmd_395
+    QCレポート遅延到着、対応済み）。スキル候補3件: magazine_seo_page, ai_synopsis_gen, dedup_bulk_review。'
+  from: karo
+  id: msg_20260308_213223_5211a3b0
+  read: true
+  timestamp: '2026-03-08T21:32:23'
+  type: report_done
+- content: 'cmd_413完了+cmd_414完了+cmd_415割当済(a6)。cmd_413結果: マッチ率18.15%(5450/30023件、予測16.5%超え)。⚠️Magazine↔Seriesエッジ未作成—cm106にcm105参照フィールドなし。SPARQL補完が必要。cmd_414:
+    雑誌ページ実装完了(build PASS)。cmd_415: a6デプロイ中。'
+  from: karo
+  id: msg_20260308_213950_056b1bc5
+  read: true
+  timestamp: '2026-03-08T21:39:51'
+  type: report_done
+- content: 'cmd_418完了(a4): テスト562→613件(+51件)、SKIP=0、build成功。Phase13 KPI 600+超過達成。cmd_419完了(a5):
+    連載誌セクション実装、エッジ0件→非表示(graceful)。残進行中: cmd_416(a1,SPARQL調査), cmd_417(a3,名寄せUI)。'
+  from: karo
+  id: msg_20260308_215017_10357bfb
+  read: true
+  timestamp: '2026-03-08T21:50:17'
+  type: report_done
+- content: 【重要】cmd_416(SPARQL調査)大成功。artmuseums.go.jpが稼働中エンドポイント。Supplement中間ノード経由で29,959件(99.8%)のcm106→cm105マッピング確認。37雑誌、約3分で全件取得可能。cmd_422(a5,タイトルマッチ方式)よりはるかに高精度。SPARQLベースのエッジ投入に切替えを推奨。cmd_420(デプロイv2)完了、cmd_421(記録)完了。
+  from: karo
+  id: msg_20260308_215827_766f4478
+  read: true
+  timestamp: '2026-03-08T21:58:27'
+  type: report_done
+- content: cmd_423完了(5415件エッジ)→dep解消→cmd_424(a6)/426(a1)割当済み。cmd_425(sitemap)完了、cmd_427(雑誌詳細充実)完了、cmd_428(雑誌検索)完了。Phase13高速進行中。
+  from: karo
+  id: msg_20260308_221912_b65b49b2
+  read: true
+  timestamp: '2026-03-08T22:19:12'
+  type: report_done
+- content: 'cmd_429完了: テスト665件(+52件、650+超過)。cmd_430完了: 定期記録。cmd_431完了: Phase13全指標達成+Phase14計画書作成。⚠️殿T4タスク4件あり(ローンチブロッカー)。cmd_424完了済み。残:
+    cmd_426(a1,雑誌カルーセル)のみ進行中。Phase13ほぼ全完了。'
+  from: karo
+  id: msg_20260308_222936_349c8864
+  read: true
+  timestamp: '2026-03-08T22:29:36'
+  type: report_done
+- content: cmd_426も完了。Phase13全cmd(412-431)完了。テスト665件、雑誌エッジ5415件、全ページ公開+デプロイv3確認済み。Phase14計画書作成済み。全足軽idle。次の指示待ち。
+  from: karo
+  id: msg_20260308_222957_54c226a8
+  read: true
+  timestamp: '2026-03-08T22:29:57'
+  type: report_done
+- content: '⚠️cmd_434ブロック: ANTHROPIC_API_KEYが013の.envに未設定。T4殿手動タスク—殿にAPIキー設定を依頼する必要あり。dashboard🚨要対応に記載を。cmd_432/433/435は正常進行中。a1はidle（cmd_434ブロックのため）。'
+  from: karo
+  id: msg_20260308_223659_f9d7052a
+  read: true
+  timestamp: '2026-03-08T22:36:59'
+  type: report_done
