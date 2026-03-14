@@ -11517,9 +11517,11 @@ commands:
     4. 全テスト SKIP=0 + 0 failures
   project: '013'
   priority: MEDIUM
-  status: in_progress
+  status: completed
   assigned_to: ashigaru2
   assigned_at: '2026-03-09T10:30:00+09:00'
+  completed_at: '2026-03-09T11:30:00+09:00'
+  completion_note: テスト810→861件(+51)。5件FAIL修正(countryOrigin JP→日本)+51件新規(フランチャイズ31+エラーページ20)。全PASS、0skip、build OK
 - id: cmd_468
   timestamp: '2026-03-09T10:15:00+09:00'
   purpose: パフォーマンス最終計測（LCP改善効果確認）
@@ -11539,9 +11541,11 @@ commands:
     4. 改善余地報告
   project: '013'
   priority: MEDIUM
-  status: in_progress
+  status: completed
   assigned_to: ashigaru3
   assigned_at: '2026-03-09T10:30:00+09:00'
+  completed_at: '2026-03-09T11:30:00+09:00'
+  completion_note: Home86/LCP4.1s(前回93/3.1s悪化)、Works86/4.2s(前回90/3.7s悪化)、Magazines96/2.8s(維持)。ローカル計測誤差含む。改善余地報告あり
 - id: cmd_469
   timestamp: '2026-03-09T10:45:00+09:00'
   purpose: Phase14統合デプロイv5（countryOrigin修正+git整理v2反映）
@@ -11589,9 +11593,11 @@ commands:
     4. build確認
   project: '013'
   priority: LOW
-  status: in_progress
+  status: completed
   assigned_to: ashigaru4
   assigned_at: '2026-03-09T11:00:00+09:00'
+  completed_at: '2026-03-09T11:20:00+09:00'
+  completion_note: i18n確認完了。curl全4ルート200OK、hreflang正常。【問題】英語ページに日本語5箇所残存(ログイン/ホーム説明/作品一覧タイトル/バッチ登録/作品カウンター)
 - id: cmd_471
   timestamp: '2026-03-09T10:45:00+09:00'
   purpose: アクセシビリティ改善（Lighthouse a11y指摘対応）
@@ -11614,6 +11620,1462 @@ commands:
     4. build確認
   project: '013'
   priority: LOW
-  status: in_progress
+  status: completed
   assigned_to: ashigaru5
   assigned_at: '2026-03-09T11:00:00+09:00'
+  completed_at: '2026-03-09T11:30:00+09:00'
+  completion_note: NavBar全リンクaria-label追加(8個)、カルーセル「すべて見る」5箇所aria-label追加、build成功
+- id: cmd_472
+  timestamp: '2026-03-13T01:50:00+09:00'
+  north_star: 外部からサイトにアクセスできなければユーザーは来ない。本番環境の安定稼働がすべての前提
+  purpose: discover.perory.com外部アクセス復旧の検証とPhase15統合デプロイ（最新コードを本番反映）
+  acceptance_criteria:
+  - discover.perory.com が外部から200 OKを返す（既に復旧済み、確認のみ）
+  - pnpm build 成功
+  - サーバー再起動後、smoke test全ページ200 OK
+  - テスト全PASS（SKIP=0）
+  - Playwrightスクリーンショット（ホーム・作品詳細・検索・マイページ・雑誌）5ページ取得
+  command: |
+    cd ~/projects/013_manga-workspace-v2
+    Phase15統合デプロイ:
+    1. git pull（最新コード取得）
+    2. pnpm install && pnpm --filter @perory/public build
+    3. launchctl stop com.perory.discover-v2 && launchctl start com.perory.discover-v2
+    4. smoke test: /, /works, /franchise/BLEACH, /browse/a, /search, /rate, /magazines → 200 OK
+    5. テスト全件実行
+    6. Playwrightスクリーンショット: ホーム、/works/C268196、/search、/mypage、/magazines
+    7. curl https://discover.perory.com/ で外部アクセス確認
+  project: '013'
+  priority: HIGH
+  status: completed
+  assigned_to: ashigaru1
+  assigned_at: '2026-03-13T01:52:33'
+  completed_at: '2026-03-13T01:57:36'
+  completion_note: ビルド成功/861テスト全PASS(SKIP=0)/全7ページ200OK/Playwright5P正常/外部discover.perory.com 200OK
+- id: cmd_473
+  timestamp: '2026-03-13T01:50:00+09:00'
+  north_star: UIの見た目が悪ければユーザーは離脱する。スクリーンショットベースの視覚検証で品質を担保
+  purpose: 全ページのUIスクリーンショットを取得し、視覚的な問題点を特定・修正する
+  acceptance_criteria:
+  - 8ページ以上のデスクトップ+モバイルスクリーンショット取得
+  - 発見した問題点のリスト作成（レイアウト崩れ、余白問題、フォント、画像表示等）
+  - 重大な問題3件以上を修正
+  - 修正後のスクリーンショットで改善を確認
+  - build成功
+  command: |
+    cd ~/projects/013_manga-workspace-v2
+    UIスクリーンショット品質改善:
+    1. mkdir -p screenshots
+    2. 全ページスクリーンショット取得（デスクトップ1280x900 + モバイル375x812）:
+       - /, /works, /browse/a, /search, /rate, /magazines, /ranking, /mypage
+    3. 各スクリーンショットを目視確認し問題点リスト作成
+    4. 重大な問題から順に修正（レイアウト崩れ、余白、フォントサイズ等）
+    5. 修正後に再スクリーンショットで確認
+    6. build確認
+  project: '013'
+  priority: HIGH
+  status: completed
+  assigned_to: ashigaru2
+  assigned_at: '2026-03-13T01:52:33'
+  completed_at: '2026-03-13T03:10:54'
+  completion_note: デスクトップ+モバイル16枚撮影。問題4件発見・3件修正(works画像優先ロード/出版社フィルタ上位20制限)。ビルド成功
+- id: cmd_474
+  timestamp: '2026-03-13T01:50:00+09:00'
+  north_star: エージェントが止まる＝開発が止まる。自動監視で稼働率を最大化
+  purpose: エージェント自動監視・復帰スクリプトを作成し、launchdで定期実行する
+  acceptance_criteria:
+  - scripts/agent_watchdog.sh が存在し、全ペインの活動状態を検出できる
+  - idle状態（5分以上無活動）のエージェントを検知してinbox_writeで起こす仕組み
+  - 家老が応答しない場合のエスカレーション（/compact送信）
+  - launchd plistで5分間隔の定期実行
+  - ログ出力（logs/watchdog.log）
+  command: |
+    cd ~/projects/010_multi-agent-shogun
+    エージェント自動監視システム構築:
+    1. 既存スクリプト確認（shogun_patrol.sh, karo_nudger.sh, healthcheck.sh, agent_activity.sh）
+    2. scripts/agent_watchdog.sh 新規作成:
+       - 全ペイン（multiagent:2.1-10）をtmux capture-paneで確認
+       - 最終活動時刻を検出（ペイン内容のタイムスタンプ or ❯プロンプト表示時間）
+       - 5分以上idle → inbox_write.shで「タスクを確認せよ」送信
+       - 家老が10分以上idle → /compact送信
+       - 全結果をlogs/watchdog.logに記録
+    3. com.perory.agent-watchdog.plist作成（5分間隔）
+    4. launchctl load で有効化
+    5. テスト実行して動作確認
+  project: '010'
+  priority: HIGH
+  status: completed
+  assigned_to: ashigaru3
+  assigned_at: '2026-03-13T01:52:33'
+  completed_at: '2026-03-13T01:59:21'
+  completion_note: agent_watchdog.sh作成+launchd登録(5分間隔)。idle検知→nudge/compact自動送信。テスト通過
+- id: cmd_475
+  timestamp: '2026-03-13T01:50:00+09:00'
+  north_star: あらすじがあれば作品の魅力が伝わり、ユーザーの評価・閲覧意欲が上がる
+  purpose: 楽天APIであらすじ収集batch4を実行し、カバレッジを拡大する
+  acceptance_criteria:
+  - 500件以上の作品に対してあらすじ取得を試行
+  - 取得成功率を記録
+  - Dgraphに投入成功
+  - build成功
+  command: |
+    cd ~/projects/013_manga-workspace-v2
+    あらすじ収集batch4:
+    1. 現在のあらすじカバレッジ確認（Dgraph query）
+    2. あらすじ未取得の作品リスト取得（ISBN持ち優先）
+    3. 楽天APIで500件バッチ実行
+    4. 取得結果をDgraphに投入
+    5. カバレッジ更新確認
+    6. build確認
+  project: '013'
+  priority: MEDIUM
+  status: completed
+  assigned_to: ashigaru4
+  assigned_at: '2026-03-13T01:52:33'
+  completed_at: '2026-03-13T02:12:00'
+  completion_note: 500件試行・成功0件(楽天未収録の古い/マイナー漫画)。ビルド成功。次バッチは人気順優先or別ソース要検討
+- id: cmd_476
+  timestamp: '2026-03-13T01:50:00+09:00'
+  north_star: 重複データはUXを損ね検索品質を下げる。名寄せ完了がデータ品質の根幹
+  purpose: 名寄せ自動承認batch2を実行し、重複グループを削減する
+  acceptance_criteria:
+  - 残4306件の重複候補から自動承認可能なものを抽出・マージ
+  - マージ成功件数を記録
+  - データ整合性確認（テスト全PASS）
+  - build成功
+  command: |
+    cd ~/projects/013_manga-workspace-v2
+    名寄せ自動承認batch2:
+    1. 現在のduplicateCandidates件数確認
+    2. auto-approve-dedup.ts で高confidence候補を自動承認
+    3. マージ実行（dry-run → 本番）
+    4. マージ後のデータ整合性確認
+    5. テスト実行
+    6. build確認
+  project: '013'
+  priority: MEDIUM
+  status: completed
+  assigned_to: ashigaru5
+  assigned_at: '2026-03-13T01:52:33'
+  completed_at: '2026-03-13T01:59:21'
+  completion_note: 名寄せ500件マージ成功(0失敗)。pending12234→11734。861テスト全PASS/ビルド成功
+- id: cmd_477
+  timestamp: '2026-03-13T01:50:00+09:00'
+  north_star: 定期記録なくして進捗追跡なし。セッション成果を確実に残す
+  purpose: Phase14完了記録とPhase15計画を記録する
+  acceptance_criteria:
+  - CHANGELOG.md にPhase14完了成果を記録
+  - TODO.md を最新状態に更新
+  - setup-log-2026-03-13.md に当日の作業ログ
+  command: |
+    Phase15開始記録:
+    1. ~/projects/013_manga-workspace-v2/CHANGELOG.md にPhase14最終成果追記
+    2. ~/projects/TODO.md 更新（完了タスクチェック、新規課題追加）
+    3. ~/projects/001_mac-infra-setup/setup-log-2026-03-13.md 作成（当日の作業ログ）
+    4. dashboard.md にPhase15開始を記載（家老が更新）
+  project: '013'
+  priority: LOW
+  status: completed
+  assigned_to: ashigaru6
+  assigned_at: '2026-03-13T01:52:33'
+  completed_at: '2026-03-13T02:04:20'
+  completion_note: CHANGELOG(013)+TODO.md+setup-log-2026-03-13.md更新。Phase15開始記録完了
+- id: cmd_478
+  timestamp: '2026-03-13T02:05:00+09:00'
+  north_star: 作品詳細ページのLCPが6.3sまで悪化。ページ速度はSEO・UXの根幹
+  purpose: Works DetailページのLCP改善（6.3s→3s以下を目標）
+  acceptance_criteria:
+  - 書影画像にpriority属性（loading=eager, fetchPriority=high）追加
+  - 画像のwidth/height属性でCLS防止
+  - Lighthouse Performance スコア改善を確認
+  - build成功、テスト全PASS
+  command: |
+    cd ~/projects/013_manga-workspace-v2
+    Works Detail LCP改善:
+    1. /works/[madbId]/page.tsx のメイン書影画像にpriority属性追加
+    2. Image コンポーネントに width/height 明示
+    3. 不要なクライアントサイドJS遅延がないか確認
+    4. npx playwright screenshot http://localhost:3005/works/C268196 でビフォー確認
+    5. 修正適用
+    6. build + テスト
+    7. Lighthouse計測で改善確認
+  project: '013'
+  priority: HIGH
+  status: completed
+  assigned_to: ashigaru1
+  assigned_at: '2026-03-13T02:02:00'
+  completed_at: '2026-03-13T03:10:54'
+  completion_note: LCP 6.3s→3.1s(Performance78→94)。avif除去+キャッシュTTL24h+sizes最適化。861テスト全PASS
+- id: cmd_479
+  timestamp: '2026-03-13T02:05:00+09:00'
+  north_star: 「今日の発見」カルーセルはセレンディピティの核。ユーザーの未知の作品との出会いを演出
+  purpose: 「今日の発見」セレンディピティカルーセルを実装する
+  acceptance_criteria:
+  - ホームに「今日の発見」カルーセル行が表示される
+  - 低人気作品を優先表示するロジック
+  - 日替わりでコンテンツが変わる仕組み（seed=日付ベース）
+  - 書影ありの作品のみ表示
+  - build成功、テスト全PASS
+  command: |
+    cd ~/projects/013_manga-workspace-v2
+    セレンディピティカルーセル実装:
+    1. /api/carousel/discovery エンドポイント新規作成
+       - 低popularity優先（viewCount少ない作品）
+       - 書影あり(coverUrl存在)フィルタ
+       - 日付seedでランダム化
+       - 成人/外国フィルタ適用
+    2. ホームにCarouselRowとして「今日の発見」追加
+    3. テスト追加
+    4. build確認
+  project: '013'
+  priority: HIGH
+  status: completed
+  assigned_to: ashigaru3
+  assigned_at: '2026-03-13T02:02:00'
+  completed_at: '2026-03-13T03:10:54'
+  completion_note: 既に実装済みと確認。discovery API+ホームCarouselRow+テスト全て既存。903テスト全PASS
+- id: cmd_480
+  timestamp: '2026-03-13T02:05:00+09:00'
+  north_star: 英語ページの日本語残存はグローバルユーザーのUXを損ねる
+  purpose: i18n英語ページの日本語残存5箇所を修正する
+  acceptance_criteria:
+  - /en/ パスで日本語テキストが表示されない
+  - ログイン/ホーム説明/作品一覧タイトル/バッチ登録/作品カウンターの5箇所修正
+  - build成功
+  command: |
+    cd ~/projects/013_manga-workspace-v2
+    i18n英語残存修正:
+    1. cmd_470報告の5箇所を特定:
+       - ログイン画面
+       - ホーム説明テキスト
+       - 作品一覧タイトル
+       - バッチ登録
+       - 作品カウンター
+    2. messages/en.json に翻訳追加/修正
+    3. 該当コンポーネントでuseTranslations使用確認
+    4. /en/ パスでスクリーンショット確認
+    5. build確認
+  project: '013'
+  priority: MEDIUM
+  status: completed
+  assigned_to: ashigaru5
+  assigned_at: '2026-03-13T02:02:00'
+  completed_at: '2026-03-13T02:14:52'
+  completion_note: i18n英語ページ日本語残存5+1箇所修正。ログイン/新規登録/作品一覧/バッチ登録全て英語化。ビルド成功
+- id: cmd_481
+  timestamp: '2026-03-13T02:05:00+09:00'
+  north_star: テスト数の増加はコード品質の証明。861→900件突破で信頼性を高める
+  purpose: テスト拡充（861→900件以上達成、カバレッジ向上）
+  acceptance_criteria:
+  - テスト900件以上達成
+  - 新規テスト40件以上追加
+  - SKIP=0、全PASS
+  - カバレッジが低い領域を優先（カルーセル、名寄せ、雑誌関連）
+  command: |
+    cd ~/projects/013_manga-workspace-v2
+    テスト拡充900件達成:
+    1. 現在のテスト数確認（pnpm test）
+    2. カバレッジが低い領域を特定:
+       - カルーセル関連API（/api/carousel/*）
+       - 名寄せ関連（dedup/merge）
+       - 雑誌関連（/api/magazines, /magazines ページ）
+       - フランチャイズ関連
+    3. 各領域にテスト追加（各10件目標）
+    4. 全テスト実行、SKIP=0確認
+    5. build確認
+  project: '013'
+  priority: MEDIUM
+  status: completed
+  assigned_to: ashigaru7
+  assigned_at: '2026-03-13T02:02:00'
+  completed_at: '2026-03-13T02:10:43'
+  completion_note: テスト861→903件(+42件)SKIP=0全PASS。フランチャイズAPI+カルーセル+新着テスト追加。ビルド成功
+- id: cmd_482
+  timestamp: '2026-03-13T02:10:00+09:00'
+  north_star: ホームのカルーセルが空（グレーボックスだらけ）ではユーザーは即離脱する。第一印象がすべて
+  purpose: ホームカルーセル10セクションの書影表示を修復する（グレーボックス→実際の書影画像）
+  acceptance_criteria:
+  - ホームの全カルーセルセクションで書影画像が表示される
+  - グレーのプレースホルダーが表示されるセクションがゼロ
+  - 書影なし作品は非表示ルール遵守（表示される作品は全てcoverUrlあり）
+  - Playwrightスクリーンショットで全セクション書影表示を確認
+  - build成功
+  command: |
+    cd ~/projects/013_manga-workspace-v2
+    【緊急】ホームカルーセル書影修復:
+
+    問題: ホームの「アニメ化作品」「受賞作品」「少年漫画」「少女漫画」「長編作品」
+    「高評価作品」「90年代の名作」「2000年代の名作」「2010年代の名作」「人気雑誌」
+    の10セクションで書影がグレーボックス（空プレースホルダー）になっている。
+    「今日の発見」「人気上位」の2セクションのみ正常表示。
+
+    調査・修正手順:
+    1. /api/carousel/* の各エンドポイントを curl で叩き、coverUrl の有無を確認
+    2. coverUrl が null/空の作品が含まれていないか確認
+    3. 原因特定:
+       a. APIがcoverUrl nullの作品を返している → GraphQLクエリにcoverUrlフィルタ追加
+       b. 画像URLが壊れている → URLの有効性確認
+       c. lazy loading が発火していない → IntersectionObserver確認
+    4. 修正実装
+    5. Playwrightスクリーンショット（フルページ）で全セクション確認
+    6. build + テスト
+  project: '013'
+  priority: CRITICAL
+  status: completed
+  assigned_to: ashigaru6
+  assigned_at: '2026-03-13T02:07:00'
+  completed_at: '2026-03-13T07:25:00'
+  completion_note: '少年/少女0件はtagクエリ不一致→demographic直接フィルタに修正/全10セクション書影確認/909テストPASS'
+- id: cmd_483
+  timestamp: '2026-03-13T02:10:00+09:00'
+  north_star: /rate は殿が最も重視するページ。ローディングで止まっては評価体験ゼロ
+  purpose: /rate ページの永久ローディング（「候補を取得中...」）を修復する
+  acceptance_criteria:
+  - /rate ページで候補作品が正常に表示される
+  - スピナーが消え、評価可能な作品カードが表示される
+  - Playwrightスクリーンショットで表示確認
+  - build成功
+  command: |
+    cd ~/projects/013_manga-workspace-v2
+    【緊急】/rate ローディング修復:
+
+    問題: /rate が「候補を取得中...」でスピナーのまま永久ローディング。
+    候補作品が一切表示されない。
+
+    調査・修正手順:
+    1. ブラウザコンソールエラー確認（npx playwright で）
+    2. /api/recommend/candidates を curl で叩き、レスポンス確認
+    3. 原因特定:
+       a. API側のエラー（Dgraphクエリ失敗等）
+       b. クライアントサイドのフェッチエラー
+       c. フィルタ条件が厳しすぎて候補0件
+       d. localStorage依存の問題（評価データなし時の挙動）
+    4. 修正実装
+    5. Playwrightスクリーンショットで候補表示確認
+    6. build + テスト
+  project: '013'
+  priority: CRITICAL
+  status: completed
+  assigned_to: ashigaru7
+  assigned_at: '2026-03-13T02:11:00'
+  completed_at: '2026-03-13T02:24:37'
+  completion_note: /rateローディング修復。原因:use clientからDgraph直接呼出→API POST経由に変更。903テスト全PASS
+- id: cmd_484
+  timestamp: '2026-03-13T02:10:00+09:00'
+  north_star: ナビに「ランキング」があるのに404では信頼を失う。存在しないページへのリンクは即修正
+  purpose: /ranking ページの404を解消する（実装 or リンク削除）
+  acceptance_criteria:
+  - /ranking が200 OKを返す（ページ実装）、またはナビからリンク削除
+  - ランキングページに人気作品が表示される
+  - build成功
+  command: |
+    cd ~/projects/013_manga-workspace-v2
+    /ranking 404修復:
+
+    問題: /ranking が404エラー。ページが未実装の可能性。
+
+    調査・修正手順:
+    1. app/ranking/ ディレクトリの有無確認
+    2. ナビバーのリンク先確認
+    3. 方針決定:
+       a. ランキングページ実装（人気順/評価順/新着順）
+       b. または暫定的にナビからリンク削除
+    4. 実装する場合:
+       - /api/works?sort=popularity で上位作品取得
+       - シンプルなグリッド表示
+       - 期間フィルタ（全期間/年間/月間）
+    5. build + テスト
+    6. Playwrightスクリーンショット
+  project: '013'
+  priority: HIGH
+  status: completed
+  assigned_to: ashigaru4
+  assigned_at: '2026-03-13T02:12:00'
+  completed_at: '2026-03-13T02:26:47'
+  completion_note: /rankingページ新規実装。人気順グリッド表示。テスト909件全PASS/ビルド成功/スクリーンショット確認
+- id: cmd_485
+  timestamp: '2026-03-13T02:16:00+09:00'
+  north_star: 検索ページの空状態はユーザーを迷わせる。人気検索ワードで導線を作る
+  purpose: 検索ページの空状態に初期コンテンツ（人気検索ワード・おすすめ作品）を追加
+  acceptance_criteria:
+  - /search ページ初期表示に人気検索ワードチップが表示される
+  - 検索前にランダムなおすすめ作品カードが表示される
+  - 検索入力後は通常の検索結果に切り替わる
+  - build成功、テスト全PASS
+  command: |
+    cd ~/projects/013_manga-workspace-v2
+    検索ページ初期コンテンツ追加:
+    1. 人気検索ワードチップ実装（ワンピース、鬼滅の刃、呪術廻戦、進撃の巨人等）
+    2. おすすめ作品グリッド（カバー画像あり上位12件）
+    3. 検索入力時に初期コンテンツを非表示→検索結果表示
+    4. build + テスト
+  project: '013'
+  priority: MEDIUM
+  status: completed
+  assigned_to: ashigaru5
+  assigned_at: '2026-03-13T02:17:00'
+  completed_at: '2026-03-13T03:10:54'
+  completion_note: 人気検索ワードチップ8語+おすすめ作品グリッド12件追加。i18n対応済み。903テスト全PASS
+- id: cmd_486
+  timestamp: '2026-03-13T02:16:00+09:00'
+  north_star: ナビアイコンのタップ領域が小さいとモバイルユーザーが離脱する
+  purpose: モバイルナビバーの改善（アイコンサイズ拡大・アクティブ状態の視認性向上）
+  acceptance_criteria:
+  - モバイルナビアイコンのタップ領域が44x44px以上
+  - アクティブ状態のハイライトが明確
+  - Playwrightモバイルスクリーンショットで確認
+  - build成功
+  command: |
+    cd ~/projects/013_manga-workspace-v2
+    モバイルナビバー改善:
+    1. NavBar.tsxのモバイルアイコンサイズをmin 44x44pxに拡大
+    2. アクティブ状態のスタイル強化（背景色・ボーダー）
+    3. 不要なナビ項目の整理（7-8個→5-6個に集約検討）
+    4. Playwrightモバイルスクリーンショット (375x812)
+    5. build確認
+  project: '013'
+  priority: MEDIUM
+  status: completed
+  assigned_to: ashigaru7
+  assigned_at: '2026-03-13T02:24:37'
+  completed_at: '2026-03-13T07:24:00'
+  completion_note: 'min-44x44px+border-b-2アクティブ表示/909テストPASS/既実装確認（冪等）/ナビ集約はT3推奨'
+- id: cmd_487
+  timestamp: '2026-03-13T03:10:00+09:00'
+  north_star: Phase15の全成果を本番に反映しなければユーザーには見えない
+  purpose: Phase15統合デプロイv2（全成果物の本番反映+外部疎通確認）
+  acceptance_criteria:
+  - pnpm build成功
+  - サーバー再起動
+  - smoke test全ページ200 OK（/ranking含む新ページも）
+  - テスト全PASS（909件以上、SKIP=0）
+  - Playwrightスクリーンショット8ページ取得
+  - discover.perory.com外部200 OK
+  command: |
+    cd ~/projects/013_manga-workspace-v2
+    Phase15統合デプロイv2:
+    1. pnpm install && pnpm --filter @perory/public build
+    2. launchctl stop/start com.perory.discover-v2
+    3. smoke test全ページ200 OK（/ranking含む）
+    4. テスト全件（SKIP=0）
+    5. Playwrightスクリーンショット8ページ
+    6. curl https://discover.perory.com/ 外部確認
+    7. gitleaks detect --source . --no-git
+  project: '013'
+  priority: HIGH
+  status: completed
+  assigned_to: ashigaru1
+  assigned_at: '2026-03-13T03:12:00'
+  completed_at: '2026-03-13T07:20:00'
+  completion_note: 'ビルド成功/全9ページ200OK/テスト909件PASS/外部200OK/gitleaks clean/SS8枚全正常'
+- id: cmd_488
+  timestamp: '2026-03-13T03:10:00+09:00'
+  north_star: 雑誌一覧のデスクトップ表示がテキストの海。カード型UIで改善
+  purpose: 雑誌一覧ページのデスクトップレイアウト改善
+  acceptance_criteria:
+  - /magazines デスクトップがカード型グリッドに改善
+  - Playwrightスクリーンショットで確認
+  - build成功
+  command: |
+    cd ~/projects/013_manga-workspace-v2
+    雑誌一覧UI改善:
+    1. /magazines のテキストリストをカード型グリッドに変更
+    2. レスポンシブ対応
+    3. スクリーンショット確認
+    4. build + テスト
+  project: '013'
+  priority: MEDIUM
+  status: completed
+  assigned_to: ashigaru2
+  assigned_at: '2026-03-13T03:12:00'
+  completed_at: '2026-03-13T07:24:00'
+  completion_note: 'グリッド2-4列化+seriesCount表示/909テストPASS/SS4枚確認済み'
+- id: cmd_489
+  timestamp: '2026-03-13T03:10:00+09:00'
+  north_star: git整理で開発成果を確実にバージョン管理
+  purpose: Phase15のgit整理（機能別コミット+gitleaks）
+  acceptance_criteria:
+  - 全変更がコミット済み
+  - gitleaks検出なし
+  - git status clean
+  command: |
+    cd ~/projects/013_manga-workspace-v2
+    Phase15 git整理:
+    1. git status で未コミットファイル確認
+    2. 機能別にコミット
+    3. gitleaks detect --source . --no-git
+    4. git log --oneline -10 確認
+  project: '013'
+  priority: MEDIUM
+  status: completed
+  assigned_to: ashigaru3
+  assigned_at: '2026-03-13T03:12:00'
+  completed_at: '2026-03-13T07:20:00'
+  completion_note: '9コミット/37ファイル/gitleaks no leaks/git clean(test-results除く)'
+- id: cmd_490
+  timestamp: '2026-03-13T03:10:00+09:00'
+  north_star: マイページの空状態改善でユーザー導線を確保
+  purpose: マイページ統計カードの初期状態改善（空状態UXガイド追加）
+  acceptance_criteria:
+  - 統計0のときに導線メッセージ表示
+  - Playwrightスクリーンショットで確認
+  - build成功
+  command: |
+    cd ~/projects/013_manga-workspace-v2
+    マイページ統計カード改善:
+    1. StatsCardsの空状態にエンプティステート実装
+    2. 「評価する」ボタンへの導線
+    3. スクリーンショット確認
+    4. build + テスト
+  project: '013'
+  priority: LOW
+  status: completed
+  assigned_to: ashigaru4
+  assigned_at: '2026-03-13T03:12:00'
+  completed_at: '2026-03-13T07:21:00'
+  completion_note: 'エンプティステート実装/★アイコン+2ボタン導線/909テストPASS/SS確認済み'
+- id: cmd_491
+  timestamp: '2026-03-13T08:00:00+09:00'
+  north_star: Phase16開始・記録更新で進捗を可視化
+  purpose: Phase16開始記録 + cmd_482/486/488完了反映 + dashboard更新
+  acceptance_criteria:
+  - CHANGELOG.md更新
+  - TODO.md更新
+  - dashboard.md Phase16セクション追加
+  - cmd_482/486/488のstatus→completed反映
+  command: |
+    cd ~/projects/010_multi-agent-shogun
+    Phase16開始記録:
+    1. dashboard.md に Phase16セクション追加
+    2. cmd_482/486/488 の完了をdashboardに反映
+    3. ~/projects/CHANGELOG.md にPhase15成果まとめ追記
+    4. ~/projects/TODO.md の完了項目更新
+    5. campaigns.md 更新
+  project: '010'
+  priority: MEDIUM
+  status: completed
+- id: cmd_492
+  timestamp: '2026-03-13T08:00:00+09:00'
+  north_star: テスト品質の継続的向上で安定性を担保
+  purpose: テスト拡充（909→目標1000件）- エッジケース・エラーハンドリング中心
+  acceptance_criteria:
+  - テスト数950件以上
+  - 全PASS、SKIP=0
+  - エッジケーステスト追加（空データ、不正入力、境界値）
+  command: |
+    cd ~/projects/013_manga-workspace-v2
+    テスト拡充Phase16:
+    1. 既存テストファイル確認（npx vitest list）
+    2. エッジケーステスト追加: 空データ、不正パラメータ、境界値
+    3. APIルートのエラーハンドリングテスト
+    4. コンポーネントのローディング/エラー状態テスト
+    5. npx vitest run で全件PASS確認
+  project: '013'
+  priority: HIGH
+  status: completed
+- id: cmd_493
+  timestamp: '2026-03-13T08:00:00+09:00'
+  north_star: PWA対応でモバイルユーザーにネイティブ体験を提供
+  purpose: PWA基盤実装（manifest.json + service worker + オフラインページ）
+  acceptance_criteria:
+  - manifest.json生成
+  - service worker登録
+  - オフラインフォールバックページ
+  - Lighthouse PWAスコア改善
+  - build成功 + テストPASS
+  command: |
+    cd ~/projects/013_manga-workspace-v2
+    PWA実装:
+    1. next.config.ts に manifest 設定
+    2. public/manifest.json 作成（name, icons, theme_color, display: standalone）
+    3. service worker基盤（next-pwa or 手動sw.js）
+    4. オフラインフォールバックページ
+    5. build + テスト
+  project: '013'
+  priority: HIGH
+  status: completed
+- id: cmd_494
+  timestamp: '2026-03-13T08:00:00+09:00'
+  north_star: 作品詳細ページの情報量を充実させユーザー満足度向上
+  purpose: 作品詳細ページUX改善（関連情報カード・外部リンク・シェアボタン）
+  acceptance_criteria:
+  - 外部リンクカード（楽天/Amazon検索リンク）
+  - SNSシェアボタン（Twitter/LINE）
+  - 関連タグクリックで検索遷移
+  - スクリーンショット確認
+  - build成功 + テストPASS
+  command: |
+    cd ~/projects/013_manga-workspace-v2
+    作品詳細ページ改善:
+    1. 外部リンクセクション追加（楽天ブックス検索URL、Amazon検索URL）
+    2. SNSシェアボタン（Twitter intent URL、LINEシェアURL）
+    3. タグをクリック可能にして/search?tag=XXXに遷移
+    4. スクリーンショット確認
+    5. build + テスト
+  project: '013'
+  priority: MEDIUM
+  status: completed
+- id: cmd_495
+  timestamp: '2026-03-13T08:00:00+09:00'
+  north_star: 検索体験を向上させ作品発見率を高める
+  purpose: 検索オートコンプリート実装（タイトル候補リアルタイム表示）
+  acceptance_criteria:
+  - 入力中にタイトル候補をドロップダウン表示
+  - デバウンス300ms
+  - 候補選択で詳細ページに遷移
+  - モバイル対応
+  - build成功 + テストPASS
+  command: |
+    cd ~/projects/013_manga-workspace-v2
+    検索オートコンプリート:
+    1. /api/search/suggest エンドポイント作成（Dgraph regexp or alloftext）
+    2. SearchBar にオートコンプリートUI追加
+    3. デバウンス300ms + ローディング表示
+    4. 候補クリックで /works/[id] 遷移
+    5. build + テスト
+  project: '013'
+  priority: HIGH
+  status: completed
+- id: cmd_496
+  timestamp: '2026-03-13T08:00:00+09:00'
+  north_star: アクセシビリティ改善でより多くのユーザーに対応
+  purpose: アクセシビリティ改善（ARIA属性・キーボードナビ・コントラスト比）
+  acceptance_criteria:
+  - 全インタラクティブ要素にaria-label付与
+  - キーボードのみで全ページ操作可能
+  - ダークモードのコントラスト比 WCAG AA準拠
+  - Lighthouseアクセシビリティ90+
+  - build成功 + テストPASS
+  command: |
+    cd ~/projects/013_manga-workspace-v2
+    アクセシビリティ改善:
+    1. 全ボタン・リンクにaria-label追加
+    2. focus-visible スタイル改善
+    3. ダークモードのコントラスト比チェック・修正
+    4. skip-to-content リンク追加
+    5. Lighthouseアクセシビリティ計測
+    6. build + テスト
+  project: '013'
+  priority: MEDIUM
+  status: completed
+- id: cmd_497
+  timestamp: '2026-03-13T08:00:00+09:00'
+  north_star: 読み込み体験を改善しユーザー離脱を防ぐ
+  purpose: スケルトンローディング実装（主要ページにローディングUI追加）
+  acceptance_criteria:
+  - ホーム・作品一覧・詳細ページにスケルトンUI
+  - Suspenseバウンダリ統一
+  - loading.tsx ファイル追加
+  - スクリーンショット確認
+  - build成功 + テストPASS
+  command: |
+    cd ~/projects/013_manga-workspace-v2
+    スケルトンローディング:
+    1. 共通SkeletonCard, SkeletonGrid コンポーネント作成
+    2. app/[locale]/loading.tsx（ホーム用）
+    3. app/[locale]/works/loading.tsx（一覧用）
+    4. app/[locale]/works/[id]/loading.tsx（詳細用）
+    5. スクリーンショット確認
+    6. build + テスト
+  project: '013'
+  priority: MEDIUM
+  status: completed
+- id: cmd_498
+  timestamp: '2026-03-13T08:45:00+09:00'
+  north_star: Phase16統合デプロイで全成果を本番反映
+  purpose: Phase16統合デプロイ（ビルド+テスト+外部確認+スクリーンショット品質確認）
+  acceptance_criteria:
+  - pnpm build成功
+  - 963+テスト全PASS
+  - 外部アクセス200OK
+  - スクリーンショット8ページ正常
+  - gitleaks clean
+  command: |
+    cd ~/projects/013_manga-workspace-v2
+    Phase16統合デプロイ:
+    1. pnpm install && pnpm --filter @perory/public build
+    2. launchctl kickstart -k system/com.perory.discover-v2 || (launchctl stop com.perory.discover-v2; launchctl start com.perory.discover-v2)
+    3. pnpm test（963+件、SKIP=0）
+    4. smoke test: curl全ページ200OK
+    5. Playwrightスクリーンショット8ページ
+    6. 外部: curl https://discover.perory.com/
+    7. gitleaks detect --source . --no-git
+  project: '013'
+  priority: HIGH
+  status: completed
+- id: cmd_499
+  timestamp: '2026-03-13T08:45:00+09:00'
+  north_star: git整理で開発成果をバージョン管理
+  purpose: Phase16 git整理（機能別コミット+gitleaks）
+  acceptance_criteria:
+  - 全変更コミット済み
+  - gitleaks検出なし
+  - git status clean
+  command: |
+    cd ~/projects/013_manga-workspace-v2
+    Phase16 git整理:
+    1. git status で未コミットファイル確認
+    2. 機能別にコミット
+    3. gitleaks detect --source . --no-git
+    4. git log --oneline -10 確認
+  project: '013'
+  priority: MEDIUM
+  status: completed
+- id: cmd_500
+  timestamp: '2026-03-13T08:45:00+09:00'
+  north_star: ダークモード品質向上でユーザー体験改善
+  purpose: ダークモードコントラスト・色調整（全ページ統一）
+  acceptance_criteria:
+  - 全ページでテキスト可読性確保
+  - カード背景の統一
+  - ボタン・リンクのダークモード配色統一
+  - スクリーンショットで確認
+  - build成功 + テストPASS
+  command: |
+    cd ~/projects/013_manga-workspace-v2
+    ダークモード品質改善:
+    1. globals.css のダークモード変数確認・調整
+    2. カード背景色の統一（gray-800/900系）
+    3. テキストカラーのコントラスト確保（gray-100/200）
+    4. ボタン・リンクのホバー色統一
+    5. スクリーンショット（ダークモードで全主要ページ）
+    6. build + テスト
+  project: '013'
+  priority: MEDIUM
+  status: completed
+- id: cmd_501
+  timestamp: '2026-03-13T08:45:00+09:00'
+  north_star: エラーページ改善でユーザー離脱を防ぐ
+  purpose: カスタム404/500エラーページ実装
+  acceptance_criteria:
+  - 404ページにホーム/検索への導線
+  - 500ページにリトライボタン
+  - ダークモード対応
+  - i18n対応（ja/en）
+  - build成功 + テストPASS
+  command: |
+    cd ~/projects/013_manga-workspace-v2
+    エラーページ改善:
+    1. app/not-found.tsx カスタム404ページ（イラスト+導線ボタン）
+    2. app/error.tsx カスタムエラーページ（リトライ+ホーム導線）
+    3. i18n対応
+    4. ダークモード対応
+    5. build + テスト
+  project: '013'
+  priority: MEDIUM
+  status: completed
+- id: cmd_502
+  timestamp: '2026-03-13T08:45:00+09:00'
+  north_star: OGP改善でSNSシェア時の見栄えを向上
+  purpose: OGP画像動的生成（作品詳細ページ用）
+  acceptance_criteria:
+  - /api/og?id=XXX で動的OGP画像生成
+  - 作品タイトル+書影のOGP画像
+  - Twitter Card対応
+  - build成功 + テストPASS
+  command: |
+    cd ~/projects/013_manga-workspace-v2
+    OGP動的生成:
+    1. app/api/og/route.tsx に ImageResponse 実装
+    2. 作品タイトル+書影をOGP画像に含める
+    3. works/[id]/page.tsx の metadata に og:image 追加
+    4. Twitter Card meta追加
+    5. build + テスト
+  project: '013'
+  priority: MEDIUM
+  status: completed
+- id: cmd_503
+  timestamp: '2026-03-13T08:45:00+09:00'
+  north_star: 閲覧履歴でユーザーのリピート訪問を促進
+  purpose: 閲覧履歴機能実装（最近見た作品リスト）
+  acceptance_criteria:
+  - localStorage に閲覧履歴保存（最大50件）
+  - /mypage に「最近見た作品」セクション追加
+  - 作品詳細ページ訪問時に自動記録
+  - build成功 + テストPASS
+  command: |
+    cd ~/projects/013_manga-workspace-v2
+    閲覧履歴:
+    1. use-history.ts フック作成（localStorage、最大50件、FIFO）
+    2. works/[id]/page.tsx で閲覧時に自動記録
+    3. /mypage に「最近見た作品」セクション追加（WorkCardグリッド）
+    4. 重複排除（同じ作品は最新に更新）
+    5. build + テスト
+  project: '013'
+  priority: MEDIUM
+  status: completed
+- id: cmd_504
+  timestamp: '2026-03-13T08:45:00+09:00'
+  north_star: Lighthouse全項目90+でプロダクション品質を証明
+  purpose: Lighthouse全カテゴリ計測＋改善（Performance/Accessibility/BP/SEO全90+目標）
+  acceptance_criteria:
+  - 全主要ページでLighthouse計測
+  - Performance 90+
+  - Accessibility 90+
+  - Best Practices 90+
+  - SEO 90+
+  - 改善実施+再計測
+  command: |
+    cd ~/projects/013_manga-workspace-v2
+    Lighthouse全項目改善:
+    1. npx lighthouse で主要5ページ計測（/, /works, /search, /rate, /mypage）
+    2. 90未満のカテゴリを特定
+    3. 改善実施（画像最適化、レンダリング、meta等）
+    4. 再計測で90+確認
+    5. build + テスト
+  project: '013'
+  priority: HIGH
+  status: completed
+- id: cmd_505
+  timestamp: '2026-03-13T09:15:00+09:00'
+  north_star: テスト1000件突破で品質基準を確立
+  purpose: テスト拡充Phase16-2（974→1000+件目標）
+  acceptance_criteria:
+  - テスト数1000件以上
+  - 全PASS、SKIP=0
+  - i18nテスト、ルーティングテスト追加
+  command: |
+    cd ~/projects/013_manga-workspace-v2
+    テスト拡充:
+    1. i18nルーティングテスト（ja/en切替、フォールバック）
+    2. ページコンポーネント描画テスト（各ページのスナップショット）
+    3. フック関数テスト（useHistory, usePreferences等）
+    4. npx vitest run で全件PASS確認
+  project: '013'
+  priority: HIGH
+  status: completed
+- id: cmd_506
+  timestamp: '2026-03-13T09:15:00+09:00'
+  north_star: ユーザー体験の向上でリピート率を高める
+  purpose: 作品一覧ページ無限スクロール実装
+  acceptance_criteria:
+  - /works ページでスクロール到達時に次ページ自動読み込み
+  - IntersectionObserver使用
+  - ローディングインジケータ表示
+  - build成功 + テストPASS
+  command: |
+    cd ~/projects/013_manga-workspace-v2
+    無限スクロール:
+    1. /works ページの現在のページネーション方式確認
+    2. IntersectionObserver + useState でページ追加読み込み
+    3. 「もっと見る」フォールバックボタン
+    4. ローディングスピナー表示
+    5. build + テスト
+  project: '013'
+  priority: MEDIUM
+  status: completed
+- id: cmd_507
+  timestamp: '2026-03-13T09:15:00+09:00'
+  north_star: 出版社ページでコンテンツ探索の切り口を増やす
+  purpose: 出版社一覧・詳細ページ実装
+  acceptance_criteria:
+  - /publishers 一覧ページ（出版社名グリッド+作品数）
+  - /publishers/[name] 詳細ページ（該当出版社の作品一覧）
+  - NavBarに導線追加
+  - build成功 + テストPASS
+  command: |
+    cd ~/projects/013_manga-workspace-v2
+    出版社ページ:
+    1. /api/publishers エンドポイント（Dgraph集計）
+    2. app/[locale]/publishers/page.tsx 一覧
+    3. app/[locale]/publishers/[name]/page.tsx 詳細
+    4. NavBar に出版社リンク追加
+    5. build + テスト
+  project: '013'
+  priority: MEDIUM
+  status: completed
+- id: cmd_508
+  timestamp: '2026-03-13T09:15:00+09:00'
+  north_star: ランダム発見機能でセレンディピティを強化
+  purpose: 「ランダムで出会う」ボタン実装（ホーム+検索ページ）
+  acceptance_criteria:
+  - ランダム作品ボタンクリックで書影あり作品にランダム遷移
+  - ホームと検索ページに配置
+  - アニメーション付き
+  - build成功 + テストPASS
+  command: |
+    cd ~/projects/013_manga-workspace-v2
+    ランダム発見:
+    1. /api/works/random エンドポイント（has(coverUrl)、1件返却）
+    2. RandomDiscoverButton コンポーネント（🎲アイコン+クリックで遷移）
+    3. ホームページのヒーローセクション付近に配置
+    4. 検索ページの初期表示エリアにも配置
+    5. build + テスト
+  project: '013'
+  priority: MEDIUM
+  status: completed
+- id: cmd_509
+  timestamp: '2026-03-13T10:00:00+09:00'
+  north_star: Phase16統合デプロイv2で全成果を本番反映
+  purpose: Phase16統合デプロイv2（batch1-3全成果反映）
+  acceptance_criteria:
+  - pnpm build成功
+  - 1009+テスト全PASS
+  - 外部200OK
+  - スクリーンショット10ページ
+  - gitleaks clean
+  command: |
+    cd ~/projects/013_manga-workspace-v2
+    1. pnpm --filter @perory/public build
+    2. launchctl kickstart -k system/com.perory.discover-v2
+    3. pnpm test
+    4. curl全ページ200OK（/, /works, /search, /rate, /mypage, /ranking, /magazines, /publishers, /browse/a）
+    5. Playwrightスクリーンショット10ページ
+    6. curl https://discover.perory.com/
+    7. gitleaks detect --source . --no-git
+  project: '013'
+  priority: HIGH
+  status: completed
+- id: cmd_510
+  timestamp: '2026-03-13T10:00:00+09:00'
+  north_star: git整理でPhase16全成果をバージョン管理
+  purpose: Phase16 git整理v3（全batch成果コミット）
+  acceptance_criteria:
+  - 全変更コミット済み
+  - gitleaks検出なし
+  - git status clean
+  command: |
+    cd ~/projects/013_manga-workspace-v2
+    1. git status
+    2. 機能別コミット
+    3. gitleaks detect --source . --no-git
+    4. git log --oneline -15
+  project: '013'
+  priority: MEDIUM
+  status: completed
+- id: cmd_511
+  timestamp: '2026-03-13T10:00:00+09:00'
+  north_star: 年代別ブラウズで探索切り口を充実
+  purpose: 年代別ブラウズページ実装（/browse/decade/1990s等）
+  acceptance_criteria:
+  - /browse/decade 一覧ページ
+  - /browse/decade/[decade] 年代別作品一覧
+  - 1960s-2020s対応
+  - build成功 + テストPASS
+  command: |
+    cd ~/projects/013_manga-workspace-v2
+    年代別ブラウズ:
+    1. /api/browse/decades エンドポイント（各年代の作品数集計）
+    2. app/[locale]/browse/decade/page.tsx 一覧
+    3. app/[locale]/browse/decade/[decade]/page.tsx 詳細
+    4. NavBarまたはホームから導線
+    5. build + テスト
+  project: '013'
+  priority: MEDIUM
+  status: completed
+- id: cmd_512
+  timestamp: '2026-03-13T10:00:00+09:00'
+  north_star: レスポンシブ品質向上でモバイルユーザー体験を改善
+  purpose: モバイルレスポンシブ全ページ品質確認+修正
+  acceptance_criteria:
+  - 全主要ページのモバイルスクリーンショット（375px）
+  - レイアウト崩れゼロ
+  - タッチターゲット44px以上
+  - build成功 + テストPASS
+  command: |
+    cd ~/projects/013_manga-workspace-v2
+    モバイル品質:
+    1. 全ページモバイルSS撮影（375x812）
+    2. レイアウト崩れ確認・修正
+    3. タッチターゲットサイズ確認
+    4. 横スクロールなし確認
+    5. build + テスト
+  project: '013'
+  priority: HIGH
+  status: completed
+- id: cmd_513
+  timestamp: '2026-03-13T10:00:00+09:00'
+  north_star: キーボードショートカットでパワーユーザー体験を強化
+  purpose: /rate ページキーボードショートカット強化
+  acceptance_criteria:
+  - 1-5キーで★評価
+  - ←→キーで前後の作品
+  - Bキーでブックマーク
+  - Sキーでスキップ
+  - ショートカット一覧ヘルプ（?キー）
+  - build成功 + テストPASS
+  command: |
+    cd ~/projects/013_manga-workspace-v2
+    キーボードショートカット:
+    1. /rate の既存キーボード操作確認
+    2. 不足分追加（1-5, B, S, ?, ←→）
+    3. ヘルプモーダル（?キー）
+    4. build + テスト
+  project: '013'
+  priority: MEDIUM
+  status: completed
+- id: cmd_514
+  timestamp: '2026-03-13T10:00:00+09:00'
+  north_star: 記録整備で開発成果を追跡可能にする
+  purpose: Phase16全体記録（CHANGELOG/TODO/campaigns/setup-log）
+  acceptance_criteria:
+  - ~/projects/CHANGELOG.md にPhase16全成果
+  - ~/projects/TODO.md 更新
+  - dashboard.md 最終更新
+  - setup-log更新
+  command: |
+    cd ~/projects/010_multi-agent-shogun
+    Phase16記録:
+    1. ~/projects/CHANGELOG.md にPhase16成果追記
+    2. ~/projects/TODO.md 更新
+    3. dashboard.md Phase16最終更新
+    4. ~/projects/001_mac-infra-setup/setup-log-2026-03-13.md 更新
+    5. campaigns.md 更新
+  project: '010'
+  priority: MEDIUM
+  status: completed
+- id: cmd_515
+  timestamp: '2026-03-13T10:00:00+09:00'
+  north_star: 作品統計ダッシュボードでデータの価値を可視化
+  purpose: /stats ページ拡充（ジャンル分布チャート・年代分布・タグクラウド）
+  acceptance_criteria:
+  - ジャンル分布の棒グラフ
+  - 年代別作品数の推移グラフ
+  - 人気タグクラウド
+  - build成功 + テストPASS
+  command: |
+    cd ~/projects/013_manga-workspace-v2
+    統計ページ拡充:
+    1. 既存/stats確認
+    2. ジャンル分布APIと棒グラフ表示
+    3. 年代別推移表示
+    4. 人気タグのワードクラウド的表示
+    5. build + テスト
+  project: '013'
+  priority: MEDIUM
+  status: completed
+- id: cmd_516
+  timestamp: '2026-03-14T10:45:00+09:00'
+  north_star: Phase16統合デプロイv3で全成果を本番反映
+  purpose: ビルド+テスト+外部確認+SS品質確認
+  status: completed
+  project: '013'
+  priority: HIGH
+- id: cmd_517
+  timestamp: '2026-03-14T10:45:00+09:00'
+  north_star: テスト1050件突破
+  purpose: テスト拡充（i18n/ルーティング/フック関数テスト追加）
+  status: completed
+  project: '013'
+  priority: HIGH
+- id: cmd_518
+  timestamp: '2026-03-14T10:45:00+09:00'
+  north_star: 年代別ブラウズでコンテンツ探索強化
+  purpose: /browse/decade 一覧+詳細ページ実装
+  status: completed
+  project: '013'
+  priority: MEDIUM
+- id: cmd_519
+  timestamp: '2026-03-14T10:45:00+09:00'
+  north_star: フッター追加でサイト完成度向上
+  purpose: 全ページ共通フッター（サイト情報+ナビ+コピーライト）
+  status: completed
+  project: '013'
+  priority: MEDIUM
+- id: cmd_520
+  timestamp: '2026-03-14T10:45:00+09:00'
+  north_star: 統計ページでデータの価値を可視化
+  purpose: /stats拡充（ジャンル分布棒グラフ+年代分布）
+  status: completed
+  project: '013'
+  priority: MEDIUM
+- id: cmd_521
+  timestamp: '2026-03-14T10:45:00+09:00'
+  north_star: Phase16 git整理で全成果をバージョン管理
+  purpose: git整理（機能別コミット+gitleaks）
+  status: completed
+  project: '013'
+  priority: MEDIUM
+- id: cmd_522
+  timestamp: '2026-03-14T10:45:00+09:00'
+  north_star: Phase16記録で進捗を可視化
+  purpose: CHANGELOG+TODO+dashboard+setup-log更新
+  status: completed
+  project: '010'
+  priority: MEDIUM
+- id: cmd_523
+  timestamp: '2026-03-14T11:10:00+09:00'
+  north_star: 作品比較機能でユーザー体験を差別化
+  purpose: /compare?ids=1,2,3 で最大3作品を横並び比較表示
+  status: completed
+  project: '013'
+  priority: MEDIUM
+- id: cmd_524
+  timestamp: '2026-03-14T11:10:00+09:00'
+  north_star: お気に入りタグで個人化体験を提供
+  purpose: マイページにお気に入りタグ機能（タグフォロー+フィード）
+  status: completed
+  project: '013'
+  priority: MEDIUM
+- id: cmd_525
+  timestamp: '2026-03-14T11:10:00+09:00'
+  north_star: 新着通知でリピート訪問を促進
+  purpose: 新着作品ページ /new（直近追加作品一覧+RSS生成）
+  status: completed
+  project: '013'
+  priority: MEDIUM
+- id: cmd_526
+  timestamp: '2026-03-14T11:10:00+09:00'
+  north_star: 読書量ダッシュボードでゲーミフィケーション
+  purpose: マイページに読書統計（評価数推移グラフ+ジャンル偏り+達成バッジ）
+  status: completed
+  project: '013'
+  priority: MEDIUM
+- id: cmd_527
+  timestamp: '2026-03-14T11:10:00+09:00'
+  north_star: 類似ユーザー推薦でソーシャル要素を強化
+  purpose: /recommend 改善（評価パターンベースの協調フィルタリング強化）
+  status: completed
+  project: '013'
+  priority: MEDIUM
+- id: cmd_528
+  timestamp: '2026-03-14T11:10:00+09:00'
+  north_star: 受賞作品フィルタでコンテンツ発見率向上
+  purpose: /works にawards(受賞歴)フィルタ追加+受賞作品バッジUI
+  status: completed
+  project: '013'
+  priority: MEDIUM
+- id: cmd_529
+  timestamp: '2026-03-14T11:10:00+09:00'
+  north_star: ブラウズページ充実でナビゲーション強化
+  purpose: /browse トップページ（50音/年代/ジャンル/出版社への導線ハブ）
+  status: completed
+  project: '013'
+  priority: MEDIUM
+- id: cmd_530
+  timestamp: '2026-03-14T11:10:00+09:00'
+  north_star: 画像最適化でパフォーマンスさらに向上
+  purpose: 書影のlazy loading+blur placeholder+srcset最適化
+  status: completed
+  project: '013'
+  priority: HIGH
+- id: cmd_531
+  timestamp: '2026-03-14T11:10:00+09:00'
+  north_star: テスト1100件で品質基盤を強化
+  purpose: テスト拡充（コンポーネント描画テスト+E2Eシナリオテスト追加）
+  status: completed
+  project: '013'
+  priority: HIGH
+- id: cmd_532
+  timestamp: '2026-03-14T11:10:00+09:00'
+  north_star: CSVエクスポート改善でデータポータビリティ確保
+  purpose: マイページCSVエクスポートに評価日時・タグ情報追加+JSONエクスポート対応
+  status: completed
+  project: '013'
+  priority: LOW
+- id: cmd_533
+  timestamp: '2026-03-14T11:10:00+09:00'
+  north_star: 多言語対応品質向上
+  purpose: i18n翻訳品質チェック+未翻訳文字列洗い出し+修正
+  status: completed
+  project: '013'
+  priority: MEDIUM
+- id: cmd_534
+  timestamp: '2026-03-14T11:10:00+09:00'
+  north_star: メタデータ品質でSEO強化
+  purpose: 全ページのmeta description/title/canonical URL最適化+構造化データ拡充
+  status: completed
+  project: '013'
+  priority: HIGH
+- id: cmd_535
+  timestamp: '2026-03-14T11:10:00+09:00'
+  north_star: git整理で全成果を確実にバージョン管理
+  purpose: Phase16最終git整理（全変更コミット+gitleaks+tag付け）
+  status: completed
+  project: '013'
+  priority: MEDIUM
+- id: cmd_536
+  timestamp: '2026-03-14T11:10:00+09:00'
+  north_star: Phase16最終デプロイで全成果を本番反映
+  purpose: Phase16最終統合デプロイ（ビルド+全テストPASS+外部確認+SS品質）
+  status: completed
+  project: '013'
+  priority: HIGH
+- id: cmd_537
+  timestamp: '2026-03-14T11:35:00+09:00'
+  purpose: 作品詳細ページにレビュー/メモ機能追加（localStorage保存）
+  status: completed
+  project: '013'
+  priority: MEDIUM
+- id: cmd_538
+  timestamp: '2026-03-14T11:35:00+09:00'
+  purpose: ホームのカルーセルにスワイプジェスチャー改善（慣性スクロール）
+  status: completed
+  project: '013'
+  priority: MEDIUM
+- id: cmd_539
+  timestamp: '2026-03-14T11:35:00+09:00'
+  purpose: /works フィルタUI改善（サイドバー→モーダル変換、モバイル対応）
+  status: completed
+  project: '013'
+  priority: MEDIUM
+- id: cmd_540
+  timestamp: '2026-03-14T11:35:00+09:00'
+  purpose: キーボードナビゲーション全ページ対応（Tab/Enter/Escape統一）
+  status: completed
+  project: '013'
+  priority: MEDIUM
+- id: cmd_541
+  timestamp: '2026-03-14T11:35:00+09:00'
+  purpose: パフォーマンス監視ダッシュボード /admin/perf（Lighthouse自動計測結果表示）
+  status: completed
+  project: '013'
+  priority: LOW
+- id: cmd_542
+  timestamp: '2026-03-14T11:35:00+09:00'
+  purpose: テスト拡充（1458→1600件目標、Playwright E2Eシナリオ追加）
+  status: completed
+  project: '013'
+  priority: HIGH
+- id: cmd_543
+  timestamp: '2026-03-14T11:35:00+09:00'
+  purpose: Phase16最終git整理（全変更コミット+gitleaks+v16タグ）
+  status: completed
+  project: '013'
+  priority: MEDIUM
+- id: cmd_544
+  timestamp: '2026-03-14T11:35:00+09:00'
+  purpose: Phase16最終統合デプロイ（ビルド+1458テストPASS+外部+SS10ページ）
+  status: completed
+  project: '013'
+  priority: HIGH
+- id: cmd_545
+  timestamp: '2026-03-14T11:35:00+09:00'
+  purpose: Phase16全体記録（CHANGELOG+TODO+dashboard+setup-log最終更新）
+  status: completed
+  project: '010'
+  priority: MEDIUM
+- id: cmd_546
+  timestamp: '2026-03-14T11:35:00+09:00'
+  purpose: 作品コレクション機能（ユーザーが自分のリストを作成・共有）
+  status: completed
+  project: '013'
+  priority: MEDIUM
+- id: cmd_547
+  timestamp: '2026-03-14T12:00:00+09:00'
+  purpose: 作品詳細ページのSEO改善（meta tags, OGP, JSON-LD構造化データ）
+  status: completed
+  project: '013'
+  priority: HIGH
+- id: cmd_548
+  timestamp: '2026-03-14T12:00:00+09:00'
+  purpose: 画像遅延読み込み最適化（IntersectionObserver + blur placeholder）
+  status: completed
+  project: '013'
+  priority: HIGH
+- id: cmd_549
+  timestamp: '2026-03-14T12:00:00+09:00'
+  purpose: 検索結果のソート機能追加（人気順/新着順/評価順/タイトル順）
+  status: completed
+  project: '013'
+  priority: MEDIUM
+- id: cmd_550
+  timestamp: '2026-03-14T12:00:00+09:00'
+  purpose: お気に入り一括エクスポート機能（JSON/CSV形式でダウンロード）
+  status: completed
+  project: '013'
+  priority: MEDIUM
+- id: cmd_551
+  timestamp: '2026-03-14T12:00:00+09:00'
+  purpose: ダークモード/ライトモード切替（CSS変数 + localStorage保存）
+  status: completed
+  project: '013'
+  priority: MEDIUM
+- id: cmd_552
+  timestamp: '2026-03-14T12:00:00+09:00'
+  purpose: 作品比較機能（2-3作品を並べてスコア・タグ・統計を比較表示）
+  status: completed
+  project: '013'
+  priority: MEDIUM
+- id: cmd_553
+  timestamp: '2026-03-14T12:00:00+09:00'
+  purpose: PWA対応（manifest.json + service worker + オフライン基本画面）
+  status: completed
+  project: '013'
+  priority: HIGH
+- id: cmd_554
+  timestamp: '2026-03-14T12:00:00+09:00'
+  purpose: API応答キャッシュ層（stale-while-revalidate戦略、Redis不要のin-memory）
+  status: completed
+  project: '013'
+  priority: HIGH
+- id: cmd_555
+  timestamp: '2026-03-14T12:00:00+09:00'
+  purpose: エラーバウンダリ全ページ統一（fallback UI + エラー報告ボタン）
+  status: completed
+  project: '013'
+  priority: MEDIUM
+- id: cmd_556
+  timestamp: '2026-03-14T12:00:00+09:00'
+  purpose: テスト拡充Phase17（1600→1800件目標、未カバーAPI route + hook全網羅）
+  status: completed
+  project: '013'
+  priority: HIGH
+- id: cmd_557
+  timestamp: '2026-03-14T12:00:00+09:00'
+  purpose: 閲覧履歴ページ改善（日別グルーピング + 期間フィルタ + 統計グラフ）
+  status: completed
+  project: '013'
+  priority: MEDIUM
+- id: cmd_558
+  timestamp: '2026-03-14T12:00:00+09:00'
+  purpose: タグクラウド可視化ページ（全タグの出現頻度をワードクラウドで表示）
+  status: completed
+  project: '013'
+  priority: LOW
+- id: cmd_559
+  timestamp: '2026-03-14T12:00:00+09:00'
+  purpose: Lighthouse CI自動計測（ビルド後に主要5ページのスコア記録・閾値チェック）
+  status: completed
+  project: '013'
+  priority: HIGH
+- id: cmd_560
+  timestamp: '2026-03-14T12:00:00+09:00'
+  purpose: 作品データCSVインポート機能（管理画面から一括登録）
+  status: completed
+  project: '013'
+  priority: LOW
+- id: cmd_561
+  timestamp: '2026-03-14T12:00:00+09:00'
+  purpose: Phase17最終git整理（全変更コミット+gitleaks+v17タグ）
+  status: completed
+  project: '013'
+  priority: MEDIUM
+- id: cmd_562
+  timestamp: '2026-03-14T12:30:00+09:00'
+  purpose: 評価ボタンUI統一（WorkRatingButtons/QuickActionOverlay/RateCard/MyListタブのアイコン・色・レイアウトを統一デザインに）
+  status: completed
+  project: '013'
+  priority: HIGH
+- id: cmd_563
+  timestamp: '2026-03-14T12:30:00+09:00'
+  purpose: Komga連携基盤（docker-compose.ymlにKomga追加、APIクライアント作成、/api/komga/エンドポイント実装）
+  status: completed
+  project: '013'
+  priority: HIGH
+- id: cmd_564
+  timestamp: '2026-03-14T12:30:00+09:00'
+  purpose: Komga作品マッチング（Dgraphの作品IDとKomgaライブラリをISBN/タイトルで紐付け、マッチング結果をDgraphに保存）
+  status: completed
+  project: '013'
+  priority: HIGH
+- id: cmd_565
+  timestamp: '2026-03-14T12:30:00+09:00'
+  purpose: 作品詳細ページにKomga読書リンク追加（マッチ済み作品に「読む」ボタン表示→Komga OPDSリーダーに遷移）
+  status: completed
+  project: '013'
+  priority: HIGH
+- id: cmd_566
+  timestamp: '2026-03-14T12:30:00+09:00'
+  purpose: 本番デプロイ設計（standalone build + Cloudflare Tunnel本番切替 + launchd本番サービス + 環境変数分離）
+  status: completed
+  project: '013'
+  priority: CRITICAL
+- id: cmd_567
+  timestamp: '2026-03-14T12:30:00+09:00'
+  purpose: 本番ビルド作成（next build standalone + 環境変数.env.production + ポート3005→3000切替）
+  status: completed
+  project: '013'
+  priority: CRITICAL
+- id: cmd_568
+  timestamp: '2026-03-14T12:30:00+09:00'
+  purpose: 本番launchdサービス作成（com.perory.production.plist、自動起動+ヘルスチェック+ログローテーション）
+  status: completed
+  project: '013'
+  priority: CRITICAL
+- id: cmd_569
+  timestamp: '2026-03-14T12:30:00+09:00'
+  purpose: Cloudflare Tunnel本番切替（discover.perory.com→localhost:3000、旧008/009のルート削除）
+  status: completed
+  project: '013'
+  priority: CRITICAL
+- id: cmd_570
+  timestamp: '2026-03-14T12:30:00+09:00'
+  purpose: 本番スモークテスト（全主要ページHTTP200 + Playwright SS10ページ + Lighthouse本番スコア計測）
+  status: completed
+  project: '013'
+  priority: CRITICAL
+- id: cmd_571
+  timestamp: '2026-03-14T12:30:00+09:00'
+  purpose: 管理者データ品質ダッシュボード（/admin/data-quality UIをdesign docに基づき実装、カバー欠損・重複検出・一括修正）
+  status: completed
+  project: '013'
+  priority: HIGH
+- id: cmd_572
+  timestamp: '2026-03-14T12:30:00+09:00'
+  purpose: CSVインポート機能（/admin/import ページ、Bookmeter/外部サービスからのコレクション一括取込）
+  status: completed
+  project: '013'
+  priority: HIGH
+- id: cmd_573
+  timestamp: '2026-03-14T12:30:00+09:00'
+  purpose: 新刊パイプライン自動化（楽天API月次スキャン→新ISBN検出→Dgraph自動追加、cronジョブ設定）
+  status: completed
+  project: '013'
+  priority: HIGH
+- id: cmd_574
+  timestamp: '2026-03-14T12:30:00+09:00'
+  purpose: レスポンシブUI総点検（モバイル/タブレット/デスクトップ全ページSS確認、タッチ操作・フォントサイズ・余白修正）
+  status: completed
+  project: '013'
+  priority: MEDIUM
+- id: cmd_575
+  timestamp: '2026-03-14T12:30:00+09:00'
+  purpose: テスト拡充（1200→1500件、未カバーのAPI route・hook・コンポーネント全網羅）
+  status: completed
+  project: '013'
+  priority: MEDIUM
+- id: cmd_576
+  timestamp: '2026-03-14T12:30:00+09:00'
+  purpose: Phase17全体記録（CHANGELOG+TODO+dashboard+setup-log更新）
+  status: completed
+  project: '013'
+  priority: MEDIUM
+- id: cmd_577
+  timestamp: '2026-03-14T15:00:00+09:00'
+  purpose: アニメバッジ削除（work-card.tsxからTV/アニメバッジのレンダリングコードを除去。overview.mdで「削除済み」と明記されている機能）
+  status: pending
+  project: '013'
+  priority: HIGH
+  command: |
+    apps/public/src/components/work-card.tsx のTV/アニメバッジ表示コード（line 97-104付近）を削除せよ。
+    overview.mdにて「削除済み: アニメバッジ（📺）」と記載されているが、実装に残存している乖離。
+    pnpm build で壊れないことを確認。
+- id: cmd_578
+  timestamp: '2026-03-14T15:00:00+09:00'
+  purpose: ナビゲーション順序修正（nav-bar.tsxのNAV_ITEMS配列を要件順に並べ替え）
+  status: pending
+  project: '013'
+  priority: HIGH
+  command: |
+    apps/public/src/components/nav-bar.tsx のNAV_ITEMS配列を以下の要件順に並べ替えよ:
+    Rate → 今日の発見 → 新着 → 全作品 → ランキング → スコア/受賞 → マイリスト → マイ統計 → 履歴
+    不要項目（browse, magazines, publishers等）はNAV_ITEMSから除外。
+    「新着」「スコア/受賞」がなければルート追加も検討（既存ページがあるか確認）。
+    pnpm build で壊れないことを確認。
+- id: cmd_579
+  timestamp: '2026-03-14T15:00:00+09:00'
+  purpose: コンテンツフィルタUIトグル実装（/mypageに成人コンテンツ・日本以外フィルタの3択トグルを追加、cookie保存）
+  status: pending
+  project: '013'
+  priority: MEDIUM
+  command: |
+    マイページ(/mypage)にコンテンツフィルタのトグルUIを追加せよ。
+    要件: 成人コンテンツ・日本以外の作品はデフォルト非表示。ユーザーがトグルでON/OFF切替可能。
+    バックエンドのshowAdult/showForeignパラメータは既に存在する。
+    設定値はcookieに保存し、全ページで参照されるようにする。
+    設計書: docs/design/zoning_policy.md を参照。
+    pnpm build で壊れないことを確認。
+- id: cmd_580
+  timestamp: '2026-03-14T15:00:00+09:00'
+  purpose: 一括操作UI実装（/admin/bulk — 漫画コマンドセンター。条件ベース除外、一括既読、WASD操作、50-100件/画面）
+  status: pending
+  project: '013'
+  priority: LOW
+  command: |
+    /admin/bulk ページを新規作成。漫画コマンドセンター（一括操作UI）。
+    要件: 条件ベース除外、一括既読登録、WASD操作、50-100件/画面表示。
+    設計書: docs/design/bulk_operations.md を参照。
+    バックエンドAPIテスト(bulk-rate-grid.test.tsx)が既に存在するので参照。
+    大規模タスクのため、段階的に実装すること（まずグリッド表示+基本操作から）。
+    pnpm build で壊れないことを確認。
