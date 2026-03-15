@@ -13,22 +13,65 @@ import time
 from datetime import datetime
 from pathlib import Path
 
+import re
+
 import yaml
 
 CANONICAL_TASKS = {f'ashigaru{i}' for i in range(1, 9)} | {'gunshi'}
 CANONICAL_REPORTS = {f'ashigaru{i}_report' for i in range(1, 9)} | {'gunshi_report'}
 IDLE_STUB = {'task': {'status': 'idle'}}
 
+# Statuses considered "finished" for archiving purposes
+DONE_STATUSES = {'done', 'cancelled', 'completed', 'complete', 'obsolete'}
+
+
+def sanitize_yaml_text(text):
+    """Fix common YAML issues: unquoted strings containing colons."""
+    lines = text.split('\n')
+    fixed = []
+    for line in lines:
+        stripped = line.lstrip()
+        indent = line[:len(line) - len(stripped)]
+        # Fix list items like: - チェック内容: "Application error"...
+        # These have a colon after non-key text in a list item value
+        if stripped.startswith('- ') and ':' in stripped[2:]:
+            prefix = '- '
+            value = stripped[2:]
+            # If it looks like a key: value pair (key has no spaces before colon), leave it
+            # Otherwise it's a value that contains a colon and needs quoting
+            colon_pos = value.find(':')
+            before_colon = value[:colon_pos]
+            # Real YAML keys don't contain spaces before the colon (usually)
+            # But acceptance_criteria items often have Japanese text with colons
+            if ' ' in before_colon and not value.startswith("'") and not value.startswith('"'):
+                # Quote the entire value
+                escaped = value.replace("'", "''")
+                fixed.append(f"{indent}- '{escaped}'")
+                continue
+        fixed.append(line)
+    return '\n'.join(fixed)
+
 
 def load_yaml(filepath):
-    """Safely load YAML file."""
+    """Safely load YAML file, with sanitization fallback for malformed files."""
     try:
         with open(filepath, 'r', encoding='utf-8') as f:
-            return yaml.safe_load(f) or {}
+            text = f.read()
     except FileNotFoundError:
         return {}
+
+    # Try normal parse first
+    try:
+        return yaml.safe_load(text) or {}
+    except yaml.YAMLError:
+        pass
+
+    # Try with sanitization
+    try:
+        sanitized = sanitize_yaml_text(text)
+        return yaml.safe_load(sanitized) or {}
     except yaml.YAMLError as e:
-        print(f"Error parsing {filepath}: {e}", file=sys.stderr)
+        print(f"Error parsing {filepath} (even after sanitization): {e}", file=sys.stderr)
         return {}
 
 
@@ -53,25 +96,24 @@ def get_queue_dir():
 
 
 def get_active_cmd_ids():
-    """Return command IDs in shogun_to_karo that are not done."""
+    """Return command IDs in shogun_to_karo that are not done.
+
+    Uses text-based parsing to handle malformed YAML.
+    """
     queue_dir = get_queue_dir()
     shogun_file = queue_dir / 'shogun_to_karo.yaml'
-    data = load_yaml(shogun_file)
 
-    key = 'commands' if 'commands' in data else 'queue'
-    commands = data.get(key, []) if isinstance(data, dict) else []
-    if not isinstance(commands, list):
+    try:
+        with open(shogun_file, 'r', encoding='utf-8') as f:
+            text = f.read()
+    except FileNotFoundError:
         return set()
 
+    _, blocks = _split_commands_by_text(text)
     active = set()
-    for cmd in commands:
-        if not isinstance(cmd, dict):
-            continue
-        if cmd.get('id') is None:
-            continue
-        if cmd.get('status') == 'done':
-            continue
-        active.add(cmd.get('id'))
+    for _, cmd_id, status in blocks:
+        if status not in DONE_STATUSES:
+            active.add(cmd_id)
     return active
 
 
@@ -103,7 +145,7 @@ def slim_tasks(dry_run=False):
         return True
 
     timestamp = get_timestamp()
-    done_statuses = {'done', 'completed', 'cancelled'}
+    done_statuses = DONE_STATUSES
 
     for filepath in sorted(tasks_dir.glob('*.yaml')):
         data = load_yaml(filepath)
@@ -132,7 +174,7 @@ def slim_tasks(dry_run=False):
                 return False
             continue
 
-        if status not in {'done', 'cancelled'}:
+        if status not in DONE_STATUSES:
             continue
 
         archive_path = archive_dir / filepath.name
@@ -248,8 +290,42 @@ def slim_inbox(agent_id, dry_run=False):
     return True
 
 
-def slim_shugun_to_karo():
-    """Archive done/cancelled commands from shogun_to_karo.yaml."""
+def _split_commands_by_text(text):
+    """Split shogun_to_karo.yaml into (header, cmd_blocks) using regex.
+
+    This avoids yaml.safe_load which fails on malformed entries
+    (unquoted colons, invalid escape sequences in double-quoted strings, etc.).
+    Each cmd_block is a tuple of (raw_text, cmd_id, status).
+    """
+    # Find the start of each command entry: "- id: cmd_NNN" at 0 or 2-space indent
+    pattern = re.compile(r'^- id:\s+(cmd_\d+)', re.MULTILINE)
+    matches = list(pattern.finditer(text))
+
+    if not matches:
+        return text, []
+
+    header = text[:matches[0].start()]
+    blocks = []
+    for i, m in enumerate(matches):
+        start = m.start()
+        end = matches[i + 1].start() if i + 1 < len(matches) else len(text)
+        block_text = text[start:end]
+        cmd_id = m.group(1)
+        # Extract status from "  status: <value>" line within this block
+        status_match = re.search(r'^\s{2}status:\s*(\S+)', block_text, re.MULTILINE)
+        status = status_match.group(1).strip("'\"") if status_match else 'unknown'
+        blocks.append((block_text, cmd_id, status))
+
+    return header, blocks
+
+
+def slim_shugun_to_karo(dry_run=False):
+    """Archive completed/cancelled/obsolete commands from shogun_to_karo.yaml.
+
+    Uses text-based splitting instead of yaml.safe_load because the file
+    contains malformed YAML (unquoted colons, invalid escape sequences)
+    that cannot be parsed by the standard YAML library.
+    """
     queue_dir = get_queue_dir()
     archive_dir = queue_dir / 'archive'
     shogun_file = queue_dir / 'shogun_to_karo.yaml'
@@ -258,47 +334,63 @@ def slim_shugun_to_karo():
         print(f"Warning: {shogun_file} not found", file=sys.stderr)
         return True
 
-    data = load_yaml(shogun_file)
-    # Support both 'commands' and 'queue' keys for backwards compatibility
-    key = 'commands' if isinstance(data, dict) and 'commands' in data else 'queue'
-    if not data or key not in data:
-        return True
-
-    queue = data.get(key, [])
-    if not isinstance(queue, list):
-        print("Error: queue is not a list", file=sys.stderr)
+    try:
+        with open(shogun_file, 'r', encoding='utf-8') as f:
+            text = f.read()
+    except Exception as e:
+        print(f"Error reading {shogun_file}: {e}", file=sys.stderr)
         return False
 
-    # Separate active and archived commands
-    active = []
-    archived = []
-
-    for cmd in queue:
-        status = cmd.get('status', 'unknown')
-        if status in ['done', 'cancelled']:
-            archived.append(cmd)
-        else:
-            active.append(cmd)
-
-    # If nothing to archive, return success without writing
-    if not archived:
+    header, blocks = _split_commands_by_text(text)
+    if not blocks:
+        print("No command entries found in shogun_to_karo.yaml", file=sys.stderr)
         return True
 
-    # Write archived commands to timestamped file
+    # Separate active and archived command blocks
+    active_blocks = []
+    archived_blocks = []
+
+    for block_text, cmd_id, status in blocks:
+        if status in DONE_STATUSES:
+            archived_blocks.append((block_text, cmd_id, status))
+        else:
+            active_blocks.append((block_text, cmd_id, status))
+
+    if not archived_blocks:
+        print("No commands to archive.", file=sys.stderr)
+        return True
+
+    if dry_run:
+        from collections import Counter
+        status_counts = Counter(s for _, _, s in archived_blocks)
+        print(f"[DRY-RUN] Would archive {len(archived_blocks)} commands (keeping {len(active_blocks)} active)", file=sys.stderr)
+        for s, n in status_counts.most_common():
+            print(f"  {s}: {n}", file=sys.stderr)
+        return True
+
+    # Write archived commands as raw text (preserving original formatting)
     archive_timestamp = get_timestamp()
     archive_file = archive_dir / f'shogun_to_karo_{archive_timestamp}.yaml'
+    ensure_parent_dir(archive_file)
 
-    archive_data = {key: archived}
-    if not save_yaml(archive_file, archive_data):
+    archive_text = header + ''.join(bt for bt, _, _ in archived_blocks)
+    try:
+        with open(archive_file, 'w', encoding='utf-8') as f:
+            f.write(archive_text)
+    except Exception as e:
+        print(f"Error writing archive {archive_file}: {e}", file=sys.stderr)
         return False
 
-    # Update main file with active commands only
-    data[key] = active
-    if not save_yaml(shogun_file, data):
-        print(f"Error: Failed to update {shogun_file}, but archive was created", file=sys.stderr)
+    # Write active commands back to main file
+    active_text = header + ''.join(bt for bt, _, _ in active_blocks)
+    try:
+        with open(shogun_file, 'w', encoding='utf-8') as f:
+            f.write(active_text)
+    except Exception as e:
+        print(f"Error writing {shogun_file}: {e}", file=sys.stderr)
         return False
 
-    print(f"Archived {len(archived)} commands to {archive_file.name}", file=sys.stderr)
+    print(f"Archived {len(archived_blocks)} commands to {archive_file.name} (kept {len(active_blocks)} active)", file=sys.stderr)
     return True
 
 
@@ -368,7 +460,7 @@ def main():
 
     # Process shogun_to_karo if this is Karo
     if agent_id == 'karo':
-        if not slim_shugun_to_karo():
+        if not slim_shugun_to_karo(dry_run):
             sys.exit(1)
         migration(dry_run)
         if not slim_tasks(dry_run):
